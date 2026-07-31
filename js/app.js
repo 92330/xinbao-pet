@@ -2456,7 +2456,7 @@ function openSettings() {
       </div>
       <div class="info-card" onclick="showAbout()" style="cursor:pointer">
         <h3>ℹ️ 关于</h3>
-        <p>欣宝小宠 v1.0 · 给8岁宝贝的学习养成伙伴</p>
+        <p>欣宝小宠 v2026.07.31 · 给8岁宝贝的学习养成伙伴</p>
       </div>
     </div>
   `);
@@ -2477,7 +2477,7 @@ function showAbout() {
   showModal('ℹ️ 关于欣宝小宠', `
     <div style="padding:10px;line-height:1.8;font-size:13px;color:#5a6a7c">
       <p style="text-align:center;font-size:32px;margin-bottom:10px">🐶</p>
-      <p><b>欣宝小宠 v1.0</b></p>
+      <p><b>欣宝小宠 v2026.07.31</b></p>
       <p>给8岁宝贝的学习养成伙伴</p>
       <p>通过照顾虚拟宠物，培养孩子完成任务、答题学习的习惯</p>
       <p style="margin-top:12px;color:#8aa5b8">所有数据保存在本地，关闭不丢失</p>
