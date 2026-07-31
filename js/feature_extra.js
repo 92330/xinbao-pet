@@ -982,6 +982,28 @@
       ac.dailyCount = 0;
       saveFE();
     }
+    // 首次打开且未配置 AI：主动引导配置，避免答非所问
+    var cfg = ac.apiConfig || {};
+    if (!cfg.key && !ac._guideShown) {
+      ac._guideShown = true;
+      saveFE();
+      showModal('💬 让宠物变聪明',
+        '<div style="padding:10px;font-size:13px;line-height:1.8;color:#5a6a7c">' +
+          '<div style="text-align:center;font-size:42px;margin-bottom:6px">🤖</div>' +
+          '<p style="margin-bottom:8px">小朋友你好！现在宠物是<b style="color:#FF9800">本地模式</b>，只能听懂简单的话，复杂问题会答非所问。</p>' +
+          '<p style="margin-bottom:8px">配置 <b>DeepSeek AI</b> 后，宠物就能像真正的小学霸一样：</p>' +
+          '<div style="background:#E8F0F8;padding:8px 10px;border-radius:8px;font-size:12px;margin-bottom:8px">' +
+            '✅ 接住你说的每一句话，不答非所问<br>' +
+            '✅ 回答十万个为什么（科学/历史/自然…）<br>' +
+            '✅ 讲故事、陪聊心情、辅导学习<br>' +
+            '✅ 记得刚才聊过什么，连贯对话' +
+          '</div>' +
+          '<p style="font-size:12px;color:#8aa5b8">需要家长帮忙，去 platform.deepseek.com 注册后，在「API Keys」页面创建一个密钥（免费额度够用很久啦）。</p>' +
+        '</div>',
+        '<button class="btn-cancel" onclick="closeModal();FEopenAIChat();">先用本地模式</button>' +
+        '<button class="btn-primary" onclick="closeModal();FEopenAIConfig();">⚙️ 立即配置AI</button>');
+      return;
+    }
     FErenderChat();
   }
 
@@ -1058,6 +1080,7 @@
       msgBox.scrollTop = msgBox.scrollHeight;
     }
     // 异步获取AI回复
+    var hasKey = ac.apiConfig && ac.apiConfig.key;
     FEfetchAIReply(text, name).then(function (reply) {
       var t = document.getElementById('feChatThinking');
       if (t) t.remove();
@@ -1065,10 +1088,26 @@
       saveFE();
       try { Sound.play('click'); } catch (e) {}
       FErenderChat();
-    }).catch(function () {
+    }).catch(function (err) {
       var t = document.getElementById('feChatThinking');
       if (t) t.remove();
-      var reply = FEgetAIReply(text, name);
+      var reply;
+      if (hasKey) {
+        // 配了 key 却失败：明确告知，避免误以为"AI也答非所问"
+        var msg = (err && err.message) || '';
+        if (/401|403|invalid api key|authentication/i.test(msg)) {
+          reply = '⚠️ API密钥不对哦，点 ⚙️ 重新填一下DeepSeek的密钥吧~';
+        } else if (/402|insufficient|余额|quota/i.test(msg)) {
+          reply = '⚠️ DeepSeek账户额度不足啦，去platform.deepseek.com充值一下~';
+        } else if (/Failed to fetch|NetworkError|network/i.test(msg)) {
+          reply = '⚠️ 网络连不上DeepSeek，检查下网络再试~（这次先用本地回复）';
+          reply = reply + '\n本地回复：' + FEgetAIReply(text, name);
+        } else {
+          reply = '⚠️ AI调用失败：' + msg.slice(0, 50) + '\n这次先用本地回复：' + FEgetAIReply(text, name);
+        }
+      } else {
+        reply = FEgetAIReply(text, name);
+      }
       ac.messages.push({ role: 'pet', text: reply, time: Date.now() });
       saveFE();
       FErenderChat();
@@ -1084,10 +1123,15 @@
     var pet = getActivePet();
     var def = pet ? (D.PET_DEFS[pet.defId] || {}) : {};
     var emoji = def.emoji || '🐶';
-    var sysContent = '你是一只可爱的虚拟宠物' + petName + '（' + emoji + '），正在和一个8岁的小朋友聊天。' +
-      '你的性格活泼、温暖、充满好奇心。请用简短、亲切、口语化的中文回复（50字以内）。' +
-      '回复要自然地接住小朋友说的每一句话，不答非所问。可以聊任何话题：学习、生活、科学、故事、情感等。' +
-      '如果小朋友问知识性问题，请用简单易懂的方式解答。如果小朋友分享心情，请先共情再回应。';
+    var sysContent =
+      '你是虚拟宠物' + petName + '（' + emoji + '），正和一个8岁小朋友聊天。\n' +
+      '【硬性规则，必须遵守】\n' +
+      '1. 必须紧扣小朋友刚刚说的那句话回复，绝对不许答非所问、不许自说自话。\n' +
+      '2. 是问题就回答问题，是分享心情就先共情，是讲故事就接着讲。\n' +
+      '3. 知识问题用8岁能听懂的话解答，不懂就说"我也不太确定，我们一起查查看"。\n' +
+      '4. 回复简短口语化，30-60字，像真的在说话，不要分点不要小标题。\n' +
+      '5. 性格活泼温暖有好奇心，但回答要准确，不能瞎编。\n' +
+      '6. 不要每次都说"我是' + petName + '"，自然聊天即可。';
     var msgs = [{ role: 'system', content: sysContent }];
     var recent = ac.messages.slice(-20);
     for (var i = 0; i < recent.length; i++) {
@@ -1104,11 +1148,15 @@
         model: cfg.model || 'deepseek-chat',
         messages: msgs,
         max_tokens: 200,
-        temperature: 0.8,
+        temperature: 0.7,
         stream: false
       })
     }).then(function (res) {
-      if (!res.ok) throw new Error('API error ' + res.status);
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          throw new Error('API ' + res.status + (t ? (': ' + t.slice(0, 120)) : ''));
+        });
+      }
       return res.json();
     }).then(function (data) {
       var reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
@@ -1117,31 +1165,40 @@
     });
   }
 
+  // 本地模式回复：识别问句、扩充知识库、答不了就诚实引导配置AI（不再敷衍）
   function FEgetAIReply(text, name) {
-    var s = String(text || '').toLowerCase();
+    var raw = String(text || '');
+    var s = raw.toLowerCase();
+    var isQuestion = /[？?]$/.test(raw.trim()) ||
+      /为什么|怎么|什么是|是什么|是谁|哪里|哪一个|多少|几岁|几点的|吗$|呢$/.test(raw);
+
     function contains(arr) {
       return arr.some(function (k) { return s.indexOf(k) >= 0; });
     }
+
+    // 1. 打招呼
     if (contains(['你好', 'hi', '嗨', 'hello', '哈喽'])) {
-      return '你好呀！我是' + name + '，很高兴和你聊天！';
+      return '你好呀！我是' + name + '，很高兴和你聊天！想聊什么呢？';
     }
-    if (contains(['饿', '吃', '食物', 'hungry'])) {
-      return '我也好饿，主人给我吃点东西吧~';
-    }
+    // 2. 情感共情（陈述句优先处理）
     if (contains(['开心', '高兴', '快乐', '嘻嘻', '哈哈'])) {
-      return '看到你开心我也好高兴！';
+      return '看到你开心我也好高兴！发生什么好玩的事啦？';
     }
-    if (contains(['伤心', '难过', '哭', '呜呜', '不开心'])) {
-      return '别难过，我会一直陪着你的！';
+    if (contains(['伤心', '难过', '哭', '呜呜', '不开心', '生气', '委屈'])) {
+      return '抱抱你，别难过，我会一直陪着你的。愿意跟我说说怎么了吗？';
     }
-    if (contains(['喜欢', '爱', '想你', '最爱'])) {
+    if (contains(['喜欢', '爱你', '想你', '最爱'])) {
       return '我也最喜欢你了！你最棒了！';
     }
-    if (contains(['任务', '作业', '学习', '考试'])) {
-      return '一起加油完成任务吧，完成后有奖励哦！';
+    // 3. 日常行为
+    if (contains(['饿', '想吃', '肚子饿'])) {
+      return '我也好饿，主人给我吃点东西吧~';
     }
-    if (contains(['游戏', '玩', '玩耍'])) {
-      return '我们去游戏中心玩吧！赛车可刺激了！';
+    if (contains(['晚安', '睡觉', '睡了', '休息'])) {
+      return '晚安主人，做个好梦~';
+    }
+    if (contains(['早安', '早上好', '起床'])) {
+      return '早安！新的一天加油哦！';
     }
     if (contains(['天气', '下雨', '晴天', '下雪', '多云'])) {
       var wt = (S.weather && S.weather.type) || 'sunny';
@@ -1153,13 +1210,45 @@
       };
       return wmap[wt] || '今天的天气真不错~';
     }
-    if (contains(['晚安', '睡觉', '睡了', '休息'])) {
-      return '晚安主人，做个好梦~';
+    if (contains(['任务', '作业', '学习', '考试'])) {
+      return '一起加油完成任务吧，完成后有奖励哦！';
     }
-    if (contains(['早安', '早上好', '起床'])) {
-      return '早安！新的一天加油哦！';
+    if (contains(['游戏', '玩耍'])) {
+      return '我们去游戏中心玩吧！赛车可刺激了！';
     }
-    return GENERIC_REPLIES[Math.floor(Math.random() * GENERIC_REPLIES.length)];
+
+    // 4. 儿童常见知识小问答（本地能答的）
+    if (contains(['太阳', '从哪升起', '东升'])) {
+      return '太阳从东边升起，西边落下~';
+    }
+    if (contains(['月亮'])) {
+      return '月亮是地球的好朋友，它会反射太阳的光，所以晚上才亮亮的！';
+    }
+    if (contains(['星星', '一闪一闪'])) {
+      return '星星眨眼是因为空气在抖动，把星光晃来晃去啦~';
+    }
+    if (contains(['彩虹'])) {
+      return '彩虹是阳光穿过雨滴变出来的，有红橙黄绿青蓝紫七种颜色！';
+    }
+    if (contains(['鱼', '在水里'])) {
+      return '鱼用鳃呼吸水里的氧气，所以不用浮上来换气哦~';
+    }
+    if (contains(['一年有几天', '一年多少天'])) {
+      return '一年有365天，闰年是366天哦~';
+    }
+
+    // 5. 问句但本地答不了 → 诚实引导配置 AI，不答非所问
+    if (isQuestion) {
+      return '这个问题好棒！本地模式下我还答不好，点右上角 ⚙️ 配置 DeepSeek AI，我就能像学霸一样回答你啦~';
+    }
+
+    // 6. 普通陈述句：简单回应 + 引导
+    var fallbacks = [
+      '嗯嗯，我听到啦！配置AI后我能聊得更深入哦~',
+      '是这样呀！点 ⚙️ 连上AI，我能陪你聊更多~',
+      '嘿嘿，和你聊天真开心！想问点什么就问我吧~'
+    ];
+    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
   }
 
   // AI配置弹窗
