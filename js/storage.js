@@ -14,7 +14,7 @@ function getDefaultState() {
     tasks: JSON.parse(JSON.stringify(window.GAME_DATA.DEFAULT_TASKS)),
     inventory: {},                 // 背包物品 {itemId: count}
     furniture: {},                 // 背包家具 {furnitureId: count}
-    placedFurniture: [],           // 已放置家具 [{id, x, y, rotate}]
+    placedFurniture: {},          // 已放置家具 {petId: [{id, x, y, rotate}]}
     unlockedMaps: [],              // 已解锁地图ID
     mapDailyReward: {},            // 地图每日奖励领取记录 {mapId: dateStr}
     photos: [],                    // 时光相册 [{id, dataURL, text, time, petId}]
@@ -37,6 +37,7 @@ function getDefaultState() {
     dailyMiniGame: { date:'', frisbee:3, puzzle:1 }, // 每日小游戏次数
     monthlyChallenge: { month:'', signDays:0, answerRight:0, tasksDone:0, rewards:[] }, // 月度挑战进度
     monthCard: { active:false, daysLeft:0, lastClaim:'' }, // 月卡
+    dailyPlayAll: { date:'', count:0 }, // 一起玩每日次数
     sound: { bgm:true, effect:true }, // 音效开关
     stats: {                       // 统计数据（用于学习报告）
       weekStart: '',               // 周一日期
@@ -87,6 +88,7 @@ const Storage = {
         this.state.monthCard = Object.assign({}, def.monthCard, saved.monthCard||{});
         this.state.monthlyChallenge = Object.assign({}, def.monthlyChallenge, saved.monthlyChallenge||{});
         this.state.sound = Object.assign({}, def.sound, saved.sound||{});
+        this.state.dailyPlayAll = Object.assign({}, def.dailyPlayAll, saved.dailyPlayAll||{});
       } else {
         this.state = getDefaultState();
         this.save();

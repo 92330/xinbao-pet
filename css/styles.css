@@ -340,6 +340,16 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
 .diary-item .diary-time { font-size:11px; color:#8aa5b8; }
 .diary-item .diary-text { font-size:13px; color:#5a6a7c; line-height:1.5; }
 .diary-item.auto { background:#FFF8E1; }
+.diary-item.user { background:#E8F5E9; }
+
+.skill-choose-btn {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 16px; border:2px solid #B0D4F1; border-radius:12px;
+  background:#fff; cursor:pointer; font-family:inherit;
+  transition:all 0.2s;
+}
+.skill-choose-btn:active { transform:scale(0.97); }
+.skill-choose-btn.disabled { opacity:0.4; cursor:not-allowed; }
 
 .bag-section { margin-bottom:16px; }
 .bag-section h3 {
@@ -585,13 +595,14 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
   background:#C8E6F5; padding:6px; border-radius:12px;
 }
 .puzzle-piece {
-  background:#fff; border-radius:8px; font-size:60px;
+  background:#fff; border-radius:8px;
   display:flex; align-items:center; justify-content:center;
   cursor:pointer; box-shadow:0 2px 6px rgba(100,150,200,0.2);
-  transition:transform .15s;
+  transition:transform .15s; overflow:hidden;
 }
+.puzzle-piece img { border-radius:8px; }
 .puzzle-piece:active { transform:scale(0.95); }
-.puzzle-piece.correct { background:#A5D6A7; }
+.puzzle-piece.correct { outline:3px solid #A5D6A7; }
 
 /* ============ 设置页 ============ */
 .settings-list { padding:16px; }

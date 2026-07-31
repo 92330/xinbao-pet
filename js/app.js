@@ -416,6 +416,13 @@ function switchPet(id) {
   renderHome();
 }
 
+// 获取当前宠物的已放置家具列表
+function getPlacedFurn() {
+  const pet = getActivePet();
+  if (!S.placedFurniture[pet.id]) S.placedFurniture[pet.id] = [];
+  return S.placedFurniture[pet.id];
+}
+
 // 渲染已放置家具（主页背景）
 function renderFurnitureLayer() {
   const layer = $('#furnitureLayer');
@@ -424,7 +431,8 @@ function renderFurnitureLayer() {
   const w = scene.clientWidth || 360;
   const h = scene.clientHeight || 400;
   const cellSize = Math.min(w, h) / 7;
-  S.placedFurniture.forEach(f => {
+  const placed = getPlacedFurn();
+  placed.forEach(f => {
     const def = D.FURNITURE_DEFS.find(x=>x.id===f.id);
     if (!def) return;
     const el = document.createElement('div');
@@ -503,7 +511,7 @@ function doInteract(actId) {
 }
 
 function hasFurniture(fid) {
-  return S.placedFurniture.some(f=>f.id===fid);
+  return getPlacedFurn().some(f=>f.id===fid);
 }
 
 // 互动动画
@@ -555,7 +563,11 @@ function gainExp(pet, exp) {
 // 一起玩
 function btnPlayAll() {
   if (S.pets.length < 2) { toast('只有1只宠物，无法一起玩~'); return; }
+  const today = Storage.todayStr();
+  if (S.dailyPlayAll.date !== today) S.dailyPlayAll = { date:today, count:0 };
+  if (S.dailyPlayAll.count >= 2) { toast('今日一起玩次数已用完，明天再来吧~'); return; }
   if (!spendCoin(20)) return;
+  S.dailyPlayAll.count++;
   S.pets.forEach(p => {
     if (!p.sick) p.mood = Math.min(100, p.mood + 5);
     gainExp(p, 2);
@@ -605,7 +617,7 @@ function openPetDetail() {
       <div style="width:60px"></div>
     </div>
     <div class="fs-body">
-      <div class="detail-pet" onclick="useSkill()">
+      <div class="detail-pet" onclick="selectSkill()">
         <div class="pet-stage" style="width:200px;height:200px">
           <div class="pet-level-badge">Lv.${pet.level}</div>
           ${pet.sick?'<div class="pet-sick-icon">🤢</div>':''}
@@ -621,7 +633,7 @@ function openPetDetail() {
         <div class="detail-row"><span class="label">等级</span><span class="value">Lv.${pet.level} (经验${pet.exp}/${pet.level*100})</span></div>
         <div class="detail-row"><span class="label">居住地</span><span class="value">${pet.house==='livingroom'?'大客厅':'独立小窝'}</span></div>
         <div class="detail-section">
-          <h3>🎯 已解锁技能 (点击宠物使用)</h3>
+          <h3>🎯 已解锁技能 (点击宠物选择使用)</h3>
           <div class="skill-list">${skillsHTML}</div>
         </div>
         <div class="detail-section">
@@ -675,11 +687,17 @@ function confirmRename() {
 }
 
 // 使用技能
-function useSkill() {
+function useSkill(level) {
   const pet = getActivePet();
   let used = null;
-  for (let lv=9; lv>=3; lv-=2) {
-    if (pet.level >= lv) { used = D.SKILL_DEFS[lv]; break; }
+  if (level) {
+    if (pet.level < level) { toast(`还没解锁哦~ 需要${level}级`); return; }
+    used = D.SKILL_DEFS[level];
+  } else {
+    // 自动选最高级已解锁技能
+    for (let lv=9; lv>=3; lv-=2) {
+      if (pet.level >= lv) { used = D.SKILL_DEFS[lv]; break; }
+    }
   }
   if (!used) { toast('还没有解锁技能哦~ 3级解锁第一个'); return; }
   pet.mood = Math.min(100, pet.mood + used.mood);
@@ -695,6 +713,24 @@ function useSkill() {
     body.style.animation = 'animJump 0.6s';
     setTimeout(()=>body.style.animation='', 600);
   }
+  openPetDetail();
+}
+
+// 选择技能弹窗
+function selectSkill() {
+  const pet = getActivePet();
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;margin:10px 0">';
+  for (let lv=3; lv<=9; lv+=2) {
+    const sk = D.SKILL_DEFS[lv];
+    const unlocked = pet.level >= lv;
+    html += `<button class="skill-choose-btn ${unlocked?'':'disabled'}" ${unlocked?`onclick="useSkill(${lv})"`:''}>
+      <div style="font-size:28px">${sk.emoji}</div>
+      <div style="font-weight:bold">${sk.name}</div>
+      <div style="font-size:12px;color:#8aa5b8">心情+${sk.mood} ${unlocked?'':`(需${lv}级)`}</div>
+    </button>`;
+  }
+  html += '</div>';
+  showModal('🎯 选择技能', html, `<button class="btn-cancel" onclick="closeModal()">关闭</button>`);
 }
 
 // 购买独立小窝
@@ -1191,17 +1227,43 @@ function renderAlbumContent() {
   } else if (albumTab==='diary') {
     let html = '<div class="diary-list">';
     if (!S.diaries.length) {
-      html += '<div class="photo-empty">📖 还没有日记<br>宠物每天会自动记录哦~</div>';
+      html += '<div class="photo-empty">📖 还没有日记<br>宠物每天会自动记录，你也可以写自己的日记~</div>';
     } else {
-      html += S.diaries.slice().reverse().map(d=>`
-        <div class="diary-item ${d.auto?'auto':''}">
-          <div class="diary-head">
-            <div class="diary-pet">${d.petName||'宠物'} ${d.auto?'🤖':''}</div>
-            <div class="diary-time">${formatTime(d.time)}</div>
+      // 按类型分组显示
+      const autoDiaries = S.diaries.filter(d=>d.author==='pet' || d.auto);
+      const userDiaries = S.diaries.filter(d=>d.author==='小欣' || (!d.auto && d.author!=='pet'));
+      
+      if (userDiaries.length) {
+        html += '<div style="font-size:13px;color:#5a6a7c;margin:8px 4px;font-weight:bold">👧 小欣的日记</div>';
+        html += userDiaries.slice().reverse().map(d=>`
+          <div class="diary-item user">
+            <div class="diary-head">
+              <div class="diary-pet">👧 小欣</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div class="diary-time">${formatTime(d.time)}</div>
+                <span style="color:#e57373;font-size:16px;cursor:pointer" onclick="deleteDiary('${d.id}')">🗑️</span>
+              </div>
+            </div>
+            <div class="diary-text">${d.text}</div>
           </div>
-          <div class="diary-text">${d.text}</div>
-        </div>
-      `).join('');
+        `).join('');
+      }
+      
+      if (autoDiaries.length) {
+        html += '<div style="font-size:13px;color:#5a6a7c;margin:12px 4px 8px;font-weight:bold">🐾 宠物日记</div>';
+        html += autoDiaries.slice().reverse().map(d=>`
+          <div class="diary-item auto">
+            <div class="diary-head">
+              <div class="diary-pet">${d.petName||'宠物'} 🤖</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div class="diary-time">${formatTime(d.time)}</div>
+                <span style="color:#e57373;font-size:16px;cursor:pointer" onclick="deleteDiary('${d.id}')">🗑️</span>
+              </div>
+            </div>
+            <div class="diary-text">${d.text}</div>
+          </div>
+        `).join('');
+      }
     }
     html += `<button class="add-btn" onclick="addDiary()">+ 写日记</button></div>`;
     c.innerHTML = html;
@@ -1333,10 +1395,9 @@ function delPhoto(id) {
 }
 
 function addDiary() {
-  const pet = getActivePet();
   showModal('📖 写日记', `
-    <div style="margin-bottom:8px;font-size:13px;color:#6a7a8c">为 ${pet.name} 写点什么吧~</div>
-    <textarea id="diaryText" maxlength="100" placeholder="今天和宠物发生了什么有趣的事..."
+    <div style="margin-bottom:8px;font-size:13px;color:#6a7a8c">以"小欣"的身份记录一件事~</div>
+    <textarea id="diaryText" maxlength="100" placeholder="今天发生了什么有趣的事..."
       style="width:100%;height:80px;padding:12px;border:2px solid #D4ECFC;border-radius:10px;font-size:14px;resize:none"></textarea>
   `, `<button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-primary" onclick="confirmAddDiary()">保存</button>`);
@@ -1344,11 +1405,19 @@ function addDiary() {
 function confirmAddDiary() {
   const text = $('#diaryText').value.trim();
   if (!text) { toast('请输入内容'); return; }
-  const pet = getActivePet();
-  S.diaries.push({ id:'d_'+Date.now(), text, time:Date.now(), petId:pet.id, petName:pet.name, auto:false });
+  S.diaries.push({ id:'d_'+Date.now(), text, time:Date.now(), author:'小欣', auto:false });
   Storage.save();
   closeModal();
   toast('日记已保存~');
+  renderAlbumContent();
+}
+
+// 删除日记
+function deleteDiary(id) {
+  if (!confirm('确定删除这篇日记？')) return;
+  S.diaries = S.diaries.filter(d=>d.id !== id);
+  Storage.save();
+  toast('已删除');
   renderAlbumContent();
 }
 
@@ -1364,9 +1433,12 @@ function autoGenerateDiary() {
     `今天亲密度增加了，我好喜欢主人~`,
     `${pet.sick?'今天不太舒服，主人快帮帮我':'今天也是元气满满的一天'}~`,
     `偷偷告诉你，我最喜欢主人了~`,
+    `今天玩了好多游戏，开心到转圈圈~`,
+    `主人摸了我的头，感觉超幸福！`,
+    `梦见了好多好吃的，肚子都饿扁了~`,
   ];
   const text = templates[Math.floor(Math.random()*templates.length)];
-  S.diaries.push({ id:'d_'+Date.now(), text, time:Date.now(), petId:pet.id, petName:pet.name, auto:true });
+  S.diaries.push({ id:'d_'+Date.now(), text, time:Date.now(), petId:pet.id, petName:pet.name, author:'pet', auto:true });
   Storage.save();
 }
 
@@ -1467,8 +1539,9 @@ function renderGrid() {
       gc.appendChild(cell);
     }
   }
-  // 渲染已放置家具
-  S.placedFurniture.forEach(f => {
+  // 渲染已放置家具（当前宠物的）
+  const placed = getPlacedFurn();
+  placed.forEach(f => {
     const def = D.FURNITURE_DEFS.find(x=>x.id===f.id);
     if (!def) return;
     showPlacedOnGrid(f, def);
@@ -1519,7 +1592,9 @@ function clickPlaced(f, def, el) {
 }
 function removePlaced(f) {
   if (!confirm('移除这件家具？')) return;
-  S.placedFurniture = S.placedFurniture.filter(x=>x!==f);
+  const placed = getPlacedFurn();
+  const idx = placed.indexOf(f);
+  if (idx >= 0) placed.splice(idx, 1);
   S.furniture[f.id] = (S.furniture[f.id]||0) + 1;
   Storage.save();
   Sound.play('click');
@@ -1561,7 +1636,7 @@ function placeOnCell(r, c) {
     for (let dc=0; dc<def.size[0]; dc++) {
       const rr=r+dr, cc=c+dc;
       if (petZone.some(([pr,pc])=>pr===rr&&pc===cc)) { toast('不能覆盖宠物位置'); return; }
-      if (S.placedFurniture.some(f=>{
+      if (getPlacedFurn().some(f=>{
         const fd = D.FURNITURE_DEFS.find(x=>x.id===f.id);
         if (!fd) return false;
         for (let ddr=0;ddr<fd.size[1];ddr++) for (let ddc=0;ddr<fd.size[0];ddr++) {
@@ -1572,7 +1647,7 @@ function placeOnCell(r, c) {
     }
   }
   // 放置
-  S.placedFurniture.push({ id:def.id, x:c, y:r, rotate:0 });
+  getPlacedFurn().push({ id:def.id, x:c, y:r, rotate:0 });
   S.furniture[def.id]--;
   if (S.furniture[def.id] <= 0) delete S.furniture[def.id];
   decorateState.selected = null;
@@ -1893,11 +1968,15 @@ function startPuzzle() {
   Storage.save();
   const emojis = ['🐶','🐱','🐰','🦊','🐼','🐧','🦄','🐯'];
   const target = emojis[Math.floor(Math.random()*emojis.length)];
-  // 4宫格，正确顺序 0,1,2,3
+  // 4宫格，正确顺序 0=左上, 1=右上, 2=左下, 3=右下
   const order = [0,1,2,3];
   // 打乱
   for (let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
-  puzzleGame = { target, order, selected:null };
+  // 确保不是已经完成的状态
+  if (order.every((p,i)=>p===i)) [order[0],order[1]]=[order[1],order[0]];
+  // 生成拼图块canvas
+  const pieces = generatePuzzlePieces(target);
+  puzzleGame = { target, order, selected:null, pieces };
   openFullscreen(`
     <div class="fs-header">
       <button class="fs-back" onclick="closeFullscreen()">← 退出</button>
@@ -1911,14 +1990,48 @@ function startPuzzle() {
   renderPuzzle();
 }
 
+// 用canvas生成拼图块（把一个emoji分成4象限）
+function generatePuzzlePieces(emoji) {
+  const size = 100;
+  const fullCanvas = document.createElement('canvas');
+  fullCanvas.width = size; fullCanvas.height = size;
+  const ctx = fullCanvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, size, size);
+  ctx.font = '80px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, size/2, size/2);
+  const pieces = [];
+  const half = size / 2;
+  // piece 0: 左上, 1: 右上, 2: 左下, 3: 右下
+  const sources = [
+    { sx: 0, sy: 0 },           // 左上
+    { sx: half, sy: 0 },        // 右上
+    { sx: 0, sy: half },        // 左下
+    { sx: half, sy: half },     // 右下
+  ];
+  for (let i = 0; i < 4; i++) {
+    const c = document.createElement('canvas');
+    c.width = half; c.height = half;
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#fff';
+    cx.fillRect(0, 0, half, half);
+    cx.drawImage(fullCanvas, sources[i].sx, sources[i].sy, half, half, 0, 0, half, half);
+    pieces.push(c.toDataURL());
+  }
+  return pieces;
+}
+
 function renderPuzzle() {
   const g = $('#puzzleGrid');
   if (!g) return;
   g.innerHTML = puzzleGame.order.map((pieceIdx, pos)=>{
-    // pieceIdx 0-3 对应目标图片的4个象限
-    // 简化：每个象限显示同一个emoji，但有位置编号
     const correct = pieceIdx === pos;
-    return `<div class="puzzle-piece ${correct?'correct':''}" onclick="clickPuzzle(${pos})">${puzzleGame.target}</div>`;
+    const imgSrc = puzzleGame.pieces[pieceIdx];
+    return `<div class="puzzle-piece ${correct?'correct':''}" onclick="clickPuzzle(${pos})">
+      <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;pointer-events:none" draggable="false">
+    </div>`;
   }).join('');
   // 检查完成
   if (puzzleGame.order.every((p,i)=>p===i)) {
@@ -1930,7 +2043,6 @@ function clickPuzzle(pos) {
   if (puzzleGame.selected === null) {
     puzzleGame.selected = pos;
   } else {
-    // 交换
     const a = puzzleGame.selected, b = pos;
     [puzzleGame.order[a], puzzleGame.order[b]] = [puzzleGame.order[b], puzzleGame.order[a]];
     puzzleGame.selected = null;
