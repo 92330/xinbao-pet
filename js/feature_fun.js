@@ -218,6 +218,10 @@
     }
   };
 
+  // 暴露给"更多"页面调用
+  window.openBugHotel = openBugHotel;
+  window.openTreasureMap = openTreasureMap;
+
   // 每日登录 30% 概率掉落1块碎片
   function dailyTreasureDropCheck() {
     ensureState();

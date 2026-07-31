@@ -992,7 +992,7 @@
     var petName = pet ? pet.name : '小宠';
     var msgsHTML;
     if (ac.messages.length === 0) {
-      msgsHTML = '<div style="text-align:center;color:#8aa5b8;padding:20px;font-size:13px">和 ' + escapeHTML(petName) + ' 聊聊天吧~<br>今日已聊 ' + ac.dailyCount + '/5 次（每次+1亲密）</div>';
+      msgsHTML = '<div style="text-align:center;color:#8aa5b8;padding:20px;font-size:13px">和 ' + escapeHTML(petName) + ' 聊聊天吧~<br>已聊 ' + ac.dailyCount + ' 次（每次+1亲密）</div>';
     } else {
       msgsHTML = ac.messages.map(function (m) {
         if (m.role === 'user') {
@@ -1006,7 +1006,7 @@
       '<div class="fe-chat-container">' +
         '<div class="fe-chat-header">' +
           '<button class="fs-back" onclick="closeFullscreen()">← 返回</button>' +
-          '<span>' + def.emoji + ' 和' + escapeHTML(petName) + '聊天 (今日' + ac.dailyCount + '/5)</span>' +
+          '<span>' + def.emoji + ' 和' + escapeHTML(petName) + '聊天 (已聊' + ac.dailyCount + '次)</span>' +
           '<button class="fe-chat-clear" onclick="FEclearChat()">🗑️</button>' +
         '</div>' +
         '<div class="fe-chat-messages" id="feChatMessages">' + msgsHTML + '</div>' +
@@ -1039,16 +1039,9 @@
     var name = pet ? pet.name : '小宠';
     var reply = FEgetAIReply(text, name);
     ac.messages.push({ role: 'pet', text: reply, time: Date.now() });
-    // 亲密度+1，每日上限5
-    var today = Storage.todayStr();
-    if (ac.dailyDate !== today) {
-      ac.dailyDate = today;
-      ac.dailyCount = 0;
-    }
-    if (ac.dailyCount < 5) {
-      addIntimacy(1);
-      ac.dailyCount += 1;
-    }
+    // 亲密度+1，不限次数
+    addIntimacy(1);
+    ac.dailyCount += 1;
     saveFE();
     try { Sound.play('click'); } catch (e) {}
     FErenderChat();
