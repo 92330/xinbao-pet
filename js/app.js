@@ -719,18 +719,25 @@ function useSkill(level) {
 // 选择技能弹窗
 function selectSkill() {
   const pet = getActivePet();
-  let html = '<div style="display:flex;flex-direction:column;gap:10px;margin:10px 0">';
+  let html = '';
+  let hasAny = false;
   for (let lv=3; lv<=9; lv+=2) {
     const sk = D.SKILL_DEFS[lv];
     const unlocked = pet.level >= lv;
+    if (unlocked) hasAny = true;
     html += `<button class="skill-choose-btn ${unlocked?'':'disabled'}" ${unlocked?`onclick="useSkill(${lv})"`:''}>
       <div style="font-size:28px">${sk.emoji}</div>
-      <div style="font-weight:bold">${sk.name}</div>
-      <div style="font-size:12px;color:#8aa5b8">心情+${sk.mood} ${unlocked?'':`(需${lv}级)`}</div>
+      <div style="flex:1">
+        <div style="font-weight:bold">${sk.name}</div>
+        <div style="font-size:12px;color:#8aa5b8">心情+${sk.mood} ${unlocked?'':'(需'+lv+'级)'}</div>
+      </div>
+      ${unlocked?'<div style="font-size:20px">▶</div>':''}
     </button>`;
   }
-  html += '</div>';
-  showModal('🎯 选择技能', html, `<button class="btn-cancel" onclick="closeModal()">关闭</button>`);
+  if (!hasAny) {
+    html = '<div style="text-align:center;padding:20px;color:#8aa5b8"><div style="font-size:48px">🔒</div><div style="margin-top:10px">还没有解锁技能哦~</div><div style="font-size:12px;margin-top:4px">3级解锁第一个技能"转圈圈"<br>完成任务和互动可以获得经验升级</div></div>' + html;
+  }
+  showModal('🎯 选择技能', `<div style="display:flex;flex-direction:column;gap:10px;margin:10px 0">${html}</div>`, `<button class="btn-cancel" onclick="closeModal()">关闭</button>`);
 }
 
 // 购买独立小窝
@@ -1230,8 +1237,9 @@ function renderAlbumContent() {
       html += '<div class="photo-empty">📖 还没有日记<br>宠物每天会自动记录，你也可以写自己的日记~</div>';
     } else {
       // 按类型分组显示
+      // 规则：author==='pet' 或 auto===true → 宠物日记；其余 → 小欣的日记
       const autoDiaries = S.diaries.filter(d=>d.author==='pet' || d.auto);
-      const userDiaries = S.diaries.filter(d=>d.author==='小欣' || (!d.auto && d.author!=='pet'));
+      const userDiaries = S.diaries.filter(d=>!(d.author==='pet' || d.auto));
       
       if (userDiaries.length) {
         html += '<div style="font-size:13px;color:#5a6a7c;margin:8px 4px;font-weight:bold">👧 小欣的日记</div>';
