@@ -1,0 +1,310 @@
+/**
+ * 欣宝小宠 - 趣味功能扩展样式
+ * 所有类前缀 ff-，避免与主样式冲突
+ * 风格：主色 #5B9BD5，圆角14-16px，柔和阴影，按钮大，字体13-16px
+ */
+
+/* ============ 通用全屏头部（多个功能复用） ============ */
+.ff-fs-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; background:#fff;
+  border-bottom:1px solid #E8F0F8; flex-shrink:0;
+}
+.ff-back-btn {
+  padding:6px 14px; border-radius:14px;
+  background:#EAF6FF; color:#5B9BD5; font-size:13px; font-weight:bold;
+}
+.ff-back-btn:active { transform:scale(0.95); }
+.ff-fs-title { font-size:17px; font-weight:bold; color:#3a4a5c; }
+
+/* ============ 功能1：盲盒扭蛋机入口卡片 ============ */
+.ff-gacha-entry {
+  display:flex; align-items:center; gap:12px;
+  margin:0 12px 12px; padding:14px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#7E57C2,#5B9BD5);
+  color:#fff; box-shadow:0 4px 14px rgba(126,87,194,0.3);
+  cursor:pointer; position:relative; overflow:hidden;
+}
+.ff-gacha-entry:active { transform:scale(0.98); }
+.ff-gacha-entry::before {
+  content:''; position:absolute; top:-30px; right:-30px;
+  width:90px; height:90px; border-radius:50%;
+  background:rgba(255,255,255,0.15);
+}
+.ff-gacha-emoji {
+  font-size:40px; line-height:1;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  animation:ffBounce 2s ease-in-out infinite;
+}
+.ff-gacha-info { flex:1; }
+.ff-gacha-title { font-size:16px; font-weight:bold; }
+.ff-gacha-sub { font-size:12px; opacity:0.9; margin-top:3px; }
+.ff-gacha-go {
+  padding:8px 16px; border-radius:14px;
+  background:#FFD54F; color:#5a4500; font-weight:bold; font-size:13px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+.ff-gacha-go:active { transform:scale(0.95); }
+
+/* ============ 扭蛋机全屏页 ============ */
+.ff-gacha-body {
+  flex:1; overflow-y:auto; padding:18px 16px 24px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+}
+.ff-gacha-machine {
+  width:200px; height:200px; border-radius:50%;
+  background:radial-gradient(circle at 50% 40%,#fff 0%,#D4ECFC 60%,#B0D4F1 100%);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 24px rgba(91,155,213,0.35), inset 0 -8px 16px rgba(255,255,255,0.6);
+  position:relative;
+}
+.ff-gacha-machine::after {
+  content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
+  width:120px; height:14px; border-radius:50%;
+  background:rgba(80,120,160,0.25); filter:blur(4px);
+}
+.ff-gacha-ball {
+  font-size:96px; line-height:1;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  transform-origin:50% 60%;
+}
+.ff-gacha-ball.shaking { animation:ffShake 0.4s ease-in-out infinite; }
+.ff-gacha-ball.pop { animation:ffPop 0.5s ease; }
+
+.ff-gacha-prize { min-height:96px; display:flex; align-items:center; justify-content:center; width:100%; }
+.ff-prize-card {
+  text-align:center; padding:12px 22px; border-radius:16px;
+  background:#fff; box-shadow:0 4px 12px rgba(100,150,200,0.2);
+  animation:ffPop 0.4s ease;
+}
+.ff-prize-rarity { font-size:13px; font-weight:bold; margin-bottom:4px; }
+.ff-prize-emoji { font-size:48px; line-height:1; }
+.ff-prize-name { font-size:14px; color:#3a4a5c; margin-top:4px; }
+.ff-prize-normal .ff-prize-rarity { color:#8aa5b8; }
+.ff-prize-rare .ff-prize-rarity { color:#7E57C2; }
+.ff-prize-rare { border:2px solid #B39DDB; }
+.ff-prize-hidden .ff-prize-rarity { color:#FF6F00; }
+.ff-prize-hidden {
+  border:2px solid #FFD54F;
+  background:linear-gradient(135deg,#FFF8E1,#fff);
+  box-shadow:0 0 18px rgba(255,213,79,0.6);
+}
+
+.ff-gacha-stats {
+  display:flex; gap:18px; font-size:13px; color:#6a7a8c;
+  background:#EAF6FF; padding:8px 16px; border-radius:14px;
+}
+.ff-gacha-stats b { color:#5B9BD5; }
+
+.ff-gacha-pool {
+  width:100%; max-width:340px; display:flex; flex-direction:column; gap:6px;
+  background:#F5F9FC; padding:10px 12px; border-radius:14px;
+}
+.ff-pool-row { font-size:12px; color:#5a6a7c; display:flex; align-items:center; gap:8px; }
+.ff-tag {
+  display:inline-block; padding:2px 8px; border-radius:10px;
+  font-size:11px; font-weight:bold; color:#fff; flex-shrink:0;
+}
+.ff-tag-n { background:#8aa5b8; }
+.ff-tag-r { background:#7E57C2; }
+.ff-tag-h { background:#FF8A65; }
+
+.ff-gacha-roll-btn {
+  width:100%; max-width:340px; padding:14px; border-radius:16px;
+  background:linear-gradient(135deg,#FFD54F,#FFC107); color:#5a4500;
+  font-size:16px; font-weight:bold;
+  box-shadow:0 4px 10px rgba(255,193,7,0.4);
+}
+.ff-gacha-roll-btn:active { transform:scale(0.97); }
+.ff-gacha-roll-btn:disabled { background:#ccc; color:#888; box-shadow:none; }
+
+/* ============ 功能2：藏宝图（主页按钮 + 挖宝） ============ */
+.ff-treasure-btn { position:relative; }
+.ff-treasure-btn.has-map { background:#FFF3E0 !important; box-shadow:0 0 10px rgba(255,193,7,0.6); }
+.ff-icon-badge {
+  position:absolute; top:-4px; right:-4px;
+  min-width:18px; height:18px; padding:0 4px;
+  background:#FF5252; color:#fff; font-size:11px; font-weight:bold;
+  border-radius:9px; display:flex; align-items:center; justify-content:center;
+  border:2px solid #fff; line-height:1;
+}
+.ff-bughotel-icon.has-map .ff-icon-badge { background:#FFC107; color:#5a4500; }
+
+.ff-treasure-body {
+  flex:1; overflow-y:auto; padding:18px 16px 24px;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.ff-treasure-tip { font-size:14px; color:#6a7a8c; text-align:center; }
+.ff-treasure-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+  max-width:300px; width:100%;
+}
+.ff-treasure-cell {
+  aspect-ratio:1; background:linear-gradient(180deg,#8D6E63,#6D4C41);
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:34px; color:#fff; cursor:pointer;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+  transition:transform .12s;
+}
+.ff-treasure-cell:active { transform:scale(0.94); }
+.ff-treasure-cell.dug {
+  background:linear-gradient(180deg,#D7CCC8,#BCAAA4); color:#3a4a5c;
+  cursor:default; box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.ff-treasure-cell.dug:active { transform:none; }
+.ff-treasure-cell.picked {
+  background:linear-gradient(180deg,#FFE082,#FFD54F);
+  box-shadow:0 0 14px rgba(255,193,7,0.8), inset 0 -2px 0 rgba(0,0,0,0.1);
+  transform:scale(1.05);
+}
+.ff-treasure-result { width:100%; max-width:300px; text-align:center; }
+.ff-dig-result {
+  font-size:16px; font-weight:bold; color:#3a4a5c;
+  padding:14px; border-radius:14px; background:#EAF6FF; margin-bottom:12px;
+}
+
+/* ============ 功能3：宠物奥运会横幅 ============ */
+.ff-olympics-banner {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; margin:8px 12px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#FFD54F,#FF8A65);
+  color:#fff; font-weight:bold; font-size:14px;
+  box-shadow:0 4px 12px rgba(255,138,101,0.35);
+  cursor:pointer; flex-shrink:0;
+  animation:ffGlow 2s ease-in-out infinite;
+}
+.ff-olympics-banner:active { transform:scale(0.98); }
+.ff-olympics-emoji { font-size:24px; animation:ffBounce 1.5s ease-in-out infinite; }
+.ff-olympics-text { flex:1; }
+.ff-olympics-go {
+  background:rgba(255,255,255,0.35); padding:5px 12px;
+  border-radius:12px; font-size:13px;
+}
+
+/* 奥运会全屏页 */
+.ff-olympics-body {
+  flex:1; overflow-y:auto; padding:18px 16px 24px;
+  display:flex; flex-direction:column; align-items:center; gap:18px;
+}
+.ff-olympics-intro { text-align:center; }
+.ff-olympics-pet { font-size:56px; animation:ffBounce 2s ease-in-out infinite; }
+.ff-olympics-name { font-size:16px; font-weight:bold; color:#3a4a5c; margin-top:6px; }
+.ff-olympics-tip { font-size:13px; color:#8aa5b8; margin-top:4px; }
+
+.ff-olympics-events {
+  width:100%; max-width:360px; display:flex; flex-direction:column; gap:10px;
+}
+.ff-olympics-event {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:14px; background:#F5F9FC;
+  box-shadow:0 2px 6px rgba(100,150,200,0.1);
+}
+.ff-evt-icon { font-size:30px; }
+.ff-evt-name { font-size:14px; font-weight:bold; color:#3a4a5c; width:84px; }
+.ff-evt-status { flex:1; font-size:12px; color:#8aa5b8; }
+.ff-progress {
+  height:10px; background:#E8F0F8; border-radius:5px; overflow:hidden;
+  margin-bottom:4px;
+}
+.ff-progress-fill {
+  height:100%; border-radius:5px;
+  background:linear-gradient(90deg,#66BB6A,#FFD54F,#FF8A65);
+  transition:width 1.8s ease;
+}
+.ff-score { font-weight:bold; color:#5B9BD5; text-align:right; }
+
+.ff-olympics-start {
+  width:100%; max-width:340px; padding:14px; border-radius:16px;
+  background:#5B9BD5; color:#fff; font-size:16px; font-weight:bold;
+  box-shadow:0 4px 10px rgba(91,155,213,0.4);
+}
+.ff-olympics-start:active { transform:scale(0.97); }
+
+/* 奥运会结果 */
+.ff-olympics-result {
+  text-align:center; width:100%; max-width:340px;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.ff-result-emoji { font-size:56px; animation:ffPop 0.5s ease; }
+.ff-result-title { font-size:18px; font-weight:bold; color:#3a4a5c; }
+.ff-result-scores {
+  width:100%; background:#F5F9FC; padding:12px; border-radius:14px;
+  font-size:14px; color:#5a6a7c; line-height:1.9;
+}
+.ff-total { font-weight:bold; color:#FF8A65; font-size:16px; margin-top:4px; }
+.ff-result-rank { font-size:15px; font-weight:bold; color:#5B9BD5; }
+.ff-result-reward {
+  width:100%; background:#FFF8E1; padding:10px; border-radius:14px;
+  font-size:13px; color:#5a4500; line-height:1.9;
+}
+.ff-result-pet { font-size:14px; color:#6a7a8c; }
+.ff-result-btn {
+  width:100%; padding:13px; border-radius:14px; margin-top:8px;
+  background:#5B9BD5; color:#fff; font-size:15px; font-weight:bold;
+}
+.ff-result-btn:active { transform:scale(0.97); }
+
+/* ============ 功能5：昆虫旅馆 ============ */
+.ff-home-icon {
+  position:absolute; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.95); border-radius:50%;
+  box-shadow:0 3px 10px rgba(100,150,200,0.35);
+  z-index:5;
+}
+.ff-home-icon:active { transform:scale(0.92); }
+.ff-bughotel-icon {
+  right:12px; bottom:12px; width:52px; height:52px;
+  animation:ffBounce 3s ease-in-out infinite;
+}
+.ff-icon-emoji { font-size:26px; }
+
+.ff-bug-body {
+  flex:1; overflow-y:auto; padding:18px 16px 24px;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.ff-bug-header { text-align:center; }
+.ff-bug-emoji { font-size:56px; animation:ffBounce 2s ease-in-out infinite; }
+.ff-bug-count { font-size:15px; font-weight:bold; color:#3a4a5c; margin-top:4px; }
+.ff-bug-timer { font-size:12px; color:#8aa5b8; margin-top:4px; }
+
+.ff-bug-list {
+  width:100%; max-width:340px; display:flex; flex-direction:column; gap:8px;
+}
+.ff-bug-guest {
+  display:flex; align-items:center; gap:12px;
+  padding:10px 14px; border-radius:14px; background:#F5F9FC;
+  box-shadow:0 2px 6px rgba(100,150,200,0.1);
+}
+.ff-bug-g-emoji { font-size:28px; }
+.ff-bug-g-name { flex:1; font-size:14px; color:#3a4a5c; font-weight:bold; }
+.ff-bug-g-time { font-size:11px; color:#8aa5b8; }
+.ff-bug-empty {
+  text-align:center; color:#8aa5b8; font-size:13px; padding:24px;
+  background:#F5F9FC; border-radius:14px;
+}
+
+/* ============ 关键帧动画 ============ */
+@keyframes ffShake {
+  0%,100% { transform:rotate(0) translateY(0); }
+  20% { transform:rotate(-12deg) translateY(-4px); }
+  40% { transform:rotate(12deg) translateY(-2px); }
+  60% { transform:rotate(-10deg) translateY(-6px); }
+  80% { transform:rotate(10deg) translateY(-2px); }
+}
+@keyframes ffPop {
+  0% { transform:scale(1); }
+  40% { transform:scale(1.3); }
+  70% { transform:scale(0.9); }
+  100% { transform:scale(1); }
+}
+@keyframes ffBounce {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-6px); }
+}
+@keyframes ffGlow {
+  0%,100% { box-shadow:0 4px 12px rgba(255,138,101,0.35); }
+  50% { box-shadow:0 4px 18px rgba(255,193,7,0.6); }
+}

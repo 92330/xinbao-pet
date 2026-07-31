@@ -1,0 +1,257 @@
+/* =========================================================
+   欣宝小宠 - 每日特色功能样式 (feature_daily.css)
+   所有类名以 fd- 前缀，避免与主样式冲突
+   ========================================================= */
+
+:root { --theme-color: #5B9BD5; }
+
+/* ---------- 主页：睡前电台按钮 ---------- */
+.fd-radio-btn {
+  position: absolute;
+  left: 10px;
+  bottom: 150px;
+  width: 52px; height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 3px 10px rgba(100,150,200,0.35);
+  font-size: 22px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  line-height: 1.1;
+  cursor: pointer;
+  z-index: 6;
+  animation: fdPulse 2.2s ease-in-out infinite;
+}
+.fd-radio-btn .fd-radio-label { font-size: 10px; color: #5a6a7c; margin-top: 1px; }
+@keyframes fdPulse {
+  0%,100% { transform: scale(1); box-shadow: 0 3px 10px rgba(100,150,200,0.35); }
+  50% { transform: scale(1.08); box-shadow: 0 4px 14px var(--theme-color); }
+}
+
+/* ---------- 主页：迷你节日横幅 ---------- */
+.fd-festival-banner {
+  margin: 6px 10px 0;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--theme-color), #FFD54F);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 3px 10px rgba(100,150,200,0.25);
+  animation: fdSlideIn .4s ease;
+}
+@keyframes fdSlideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ---------- 主页：宠物名字/签名/性格标签 ---------- */
+.fd-pet-extra {
+  position: absolute;
+  left: 50%;
+  bottom: -46px;
+  transform: translateX(-50%);
+  width: 200px;
+  text-align: center;
+  pointer-events: none;
+}
+.fd-pet-name {
+  font-size: 15px; font-weight: bold; color: #3a4a5c;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+}
+.fd-personality-tag {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--theme-color);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+}
+.fd-signature {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6a7a8c;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  padding: 2px 8px;
+  display: inline-block;
+}
+
+/* ---------- 睡衣日：睡衣小标识 ---------- */
+.fd-pajama { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); animation: fdFloat 1.6s ease-in-out infinite; }
+@keyframes fdFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-3px);} }
+
+/* ---------- 设置页：fd 卡片（在 info-card 基础上加左侧主题色条） ---------- */
+.fd-card {
+  border-left: 5px solid var(--theme-color);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.fd-card:active { transform: scale(0.98); box-shadow: 0 4px 12px rgba(100,150,200,0.25); }
+
+/* ---------- 睡前故事电台 ---------- */
+.fd-story { padding: 18px 16px 24px; }
+.fd-story-pet {
+  font-size: 14px; color: var(--theme-color); font-weight: bold;
+  margin-bottom: 10px;
+}
+.fd-story-title {
+  font-size: 18px; color: #3a4a5c; text-align: center;
+  margin: 6px 0 14px;
+}
+.fd-story-text {
+  font-size: 15px; line-height: 1.9; color: #4a5a6c;
+  background: #F4FAFF; border-radius: 14px; padding: 16px;
+  box-shadow: inset 0 0 0 2px rgba(91,155,213,0.15);
+}
+.fd-story-end {
+  text-align: center; font-size: 13px; color: #8aa5b8;
+  margin: 16px 0 12px;
+}
+.fd-story-btn { width: 100%; padding: 12px; border-radius: 14px; font-size: 15px; }
+
+/* ---------- 小镇周报 ---------- */
+.fd-newspaper { padding: 6px 4px; }
+.fd-news-date { font-size: 12px; color: #8aa5b8; text-align: center; margin-bottom: 8px; }
+.fd-news-headline {
+  font-size: 16px; font-weight: bold; color: #3a4a5c;
+  background: linear-gradient(90deg, var(--theme-color), #66BB6A);
+  color: #fff; padding: 8px 12px; border-radius: 12px; text-align: center;
+  margin-bottom: 10px;
+}
+.fd-news-item {
+  font-size: 14px; color: #4a5a6c; padding: 6px 10px;
+  background: #F4FAFF; border-radius: 10px; margin-bottom: 6px;
+}
+.fd-news-item b { color: var(--theme-color); }
+.fd-news-section {
+  font-size: 14px; font-weight: bold; color: #3a4a5c;
+  margin: 14px 0 8px;
+}
+.fd-news-weather {
+  font-size: 16px; text-align: center; padding: 12px;
+  background: #EAF6FF; border-radius: 12px; color: #5a6a7c;
+}
+.fd-news-tip {
+  font-size: 14px; line-height: 1.7; color: #4a5a6c;
+  background: #FFF8E1; border-radius: 12px; padding: 12px;
+  border-left: 4px solid #FFD54F;
+}
+
+/* ---------- 通用：空状态 / 输入框 ---------- */
+.fd-empty {
+  text-align: center; color: #8aa5b8; font-size: 14px;
+  padding: 24px 10px; background: #F4FAFF; border-radius: 14px; margin: 10px 0;
+}
+.fd-input, .fd-textarea, .fd-birth-input {
+  width: 100%; padding: 12px;
+  border: 2px solid #D4ECFC; border-radius: 12px;
+  font-size: 15px; color: #3a4a5c; background: #fff;
+  box-sizing: border-box;
+}
+.fd-input:focus, .fd-textarea:focus, .fd-birth-input:focus { outline: none; border-color: var(--theme-color); }
+.fd-textarea { min-height: 80px; resize: vertical; font-family: inherit; }
+.fd-birth-input { width: 70px; text-align: center; }
+.fd-link { color: var(--theme-color); cursor: pointer; font-weight: bold; text-decoration: underline; }
+
+/* ---------- 时光胶囊 ---------- */
+.fd-capsule-list { padding: 6px 0; }
+.fd-capsule-card {
+  background: #fff; border-radius: 14px; padding: 14px;
+  margin-bottom: 12px; box-shadow: 0 2px 8px rgba(100,150,200,0.15);
+  border-left: 5px solid #FFD54F;
+}
+.fd-capsule-card.mature { border-left-color: var(--theme-color); background: #F4FAFF; }
+.fd-capsule-date { font-size: 12px; color: #8aa5b8; margin-bottom: 6px; }
+.fd-capsule-text {
+  font-size: 14px; line-height: 1.7; color: #3a4a5c;
+  background: #FFF8E1; border-radius: 10px; padding: 10px;
+}
+.fd-capsule-card.mature .fd-capsule-text { background: #EAF6FF; }
+.fd-capsule-text.fd-locked { color: #8aa5b8; font-style: italic; text-align: center; }
+.fd-mini-btn {
+  margin-top: 8px; padding: 5px 12px; border: none;
+  border-radius: 10px; background: #FFE0E0; color: #E57373;
+  font-size: 12px; cursor: pointer;
+}
+.fd-mini-btn:active { transform: scale(0.96); }
+.fd-capsule-create {
+  margin-top: 16px; padding: 16px; background: #F4FAFF; border-radius: 14px;
+}
+.fd-capsule-create h3 { font-size: 15px; color: #3a4a5c; margin-bottom: 10px; }
+.fd-capsule-opts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.fd-opt-btn {
+  flex: 1; min-width: 90px; padding: 12px 8px; border: none;
+  border-radius: 12px; background: var(--theme-color); color: #fff;
+  font-size: 13px; font-weight: bold; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(91,155,213,0.3);
+}
+.fd-opt-btn:active { transform: scale(0.97); }
+.fd-birthday-set { font-size: 12px; color: #6a7a8c; text-align: center; margin-top: 6px; }
+
+/* 时光胶囊成熟弹窗 */
+.fd-capsule-reveal { text-align: center; padding: 10px 6px; }
+.fd-capsule-spark { font-size: 44px; animation: fdSpark 1.2s ease-in-out infinite; }
+@keyframes fdSpark { 0%,100%{transform:scale(1) rotate(0);} 50%{transform:scale(1.2) rotate(15deg);} }
+.fd-capsule-hint { font-size: 13px; color: #5a6a7c; margin: 8px 0; }
+.fd-capsule-text.reveal {
+  font-size: 16px; line-height: 1.8; color: #3a4a5c;
+  background: linear-gradient(90deg, #EAF6FF, #FFF8E1);
+  border-radius: 14px; padding: 16px; margin: 10px 0;
+  border: 2px dashed var(--theme-color);
+}
+.fd-capsule-foot { font-size: 11px; color: #8aa5b8; margin-top: 10px; }
+
+/* ---------- 主题色选择 ---------- */
+.fd-theme-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 10px 4px; }
+.fd-theme-swatch {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  border: 3px solid #fff;
+  transition: transform .15s ease;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.fd-theme-swatch.sel { border-color: #3a4a5c; transform: scale(1.1); }
+.fd-theme-swatch.sel::after {
+  content: '✓'; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); color: #fff; font-size: 20px; font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.fd-theme-name {
+  position: absolute; bottom: -18px; font-size: 11px; color: #6a7a8c;
+  white-space: nowrap;
+}
+
+/* ---------- 性格测试 ---------- */
+.fd-quiz { padding: 20px 16px; }
+.fd-quiz-q {
+  font-size: 18px; font-weight: bold; color: #3a4a5c;
+  text-align: center; margin-bottom: 20px; line-height: 1.5;
+}
+.fd-quiz-opts { display: flex; flex-direction: column; gap: 12px; }
+.fd-quiz-opt {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; border: 2px solid #D4ECFC; border-radius: 14px;
+  background: #fff; cursor: pointer; text-align: left;
+  font-size: 15px; color: #3a4a5c;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+.fd-quiz-opt:active { transform: scale(0.98); border-color: var(--theme-color); background: #F4FAFF; }
+.fd-quiz-opt-text { flex: 1; padding-right: 10px; }
+.fd-quiz-tag { font-size: 12px; color: var(--theme-color); font-weight: bold; white-space: nowrap; }
+
+/* 性格测试结果 */
+.fd-quiz-result { padding: 30px 20px; text-align: center; }
+.fd-result-emoji { font-size: 64px; margin-bottom: 12px; animation: fdSpark 1.4s ease-in-out infinite; }
+.fd-result-tag { font-size: 18px; color: #3a4a5c; margin-bottom: 12px; }
+.fd-result-tag b { color: var(--theme-color); font-size: 22px; }
+.fd-result-desc {
+  font-size: 14px; line-height: 1.8; color: #5a6a7c;
+  background: #F4FAFF; border-radius: 14px; padding: 14px; margin-bottom: 20px;
+}
+
+/* 通用主题色强调工具类 */
+.fd-accent { background: var(--theme-color); color: #fff; }
