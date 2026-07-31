@@ -244,6 +244,16 @@ const QUESTION_BANK = [
   { version:'人教版', grade:2, subject:'数学', question:'1小时 = ()分', options:['30','60','100','24'], answer:1 },
   { version:'人教版', grade:2, subject:'数学', question:'8 × 9 = ?', options:['64','72','81','72'], answer:1 },
   { version:'人教版', grade:2, subject:'数学', question:'35 + 27 = ?', options:['52','62','61','72'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'7 × 8 = ?', options:['54','56','58','64'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'45 - 19 = ?', options:['16','26','36','25'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'9 × 5 = ?', options:['40','45','50','55'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'36 ÷ 4 = ?', options:['8','9','7','6'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'1分米 = ()厘米', options:['1','10','100','5'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'4 × 6 = ?', options:['20','24','28','30'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'72 ÷ 8 = ?', options:['8','9','7','10'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'56 + 28 = ?', options:['74','84','94','78'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'3 × 9 = ?', options:['21','27','24','30'], answer:1 },
+  { version:'人教版', grade:2, subject:'数学', question:'100 - 37 = ?', options:['53','63','73','60'], answer:1 },
 
   // ===== 二年级 语文 =====
   { version:'人教版', grade:2, subject:'语文', question:'"美丽"的近义词是？', options:['丑陋','漂亮','高大','矮小'], answer:1 },
@@ -256,6 +266,16 @@ const QUESTION_BANK = [
   { version:'人教版', grade:2, subject:'语文', question:'"星星"是()结构', options:['上下','左右','半包围','全包围'], answer:0 },
   { version:'人教版', grade:2, subject:'语文', question:'"小"的反义词是？', options:['大','多','高','远'], answer:0 },
   { version:'人教版', grade:2, subject:'语文', question:'"春暖花开"形容哪个季节？', options:['春','夏','秋','冬'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"树"的偏旁是？', options:['木','氵','日','口'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"鸡"的偏旁是？', options:['鸟','木','氵','日'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"看"是()结构', options:['上下','左右','半包围','全包围'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"安静"的反义词是？', options:['吵闹','平静','舒适','干净'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"红"的反义词是？', options:['绿','白','黑','黄'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"早上"的反义词是？', options:['中午','晚上','下午','黎明'], answer:1 },
+  { version:'人教版', grade:2, subject:'语文', question:'"远"的反义词是？', options:['近','长','高','大'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"一()花"填量词', options:['朵','只','条','棵'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"河"的偏旁是？', options:['氵','木','日','土'], answer:0 },
+  { version:'人教版', grade:2, subject:'语文', question:'"明"是()结构', options:['左右','上下','半包围','全包围'], answer:0 },
 
   // ===== 二年级 英语 =====
   { version:'人教版', grade:2, subject:'英语', question:'banana 是？', options:['苹果','香蕉','橘子','葡萄'], answer:1 },
@@ -268,6 +288,16 @@ const QUESTION_BANK = [
   { version:'人教版', grade:2, subject:'英语', question:'water 是？', options:['火','水','土','风'], answer:1 },
   { version:'人教版', grade:2, subject:'英语', question:'"夏天"是？', options:['spring','summer','autumn','winter'], answer:1 },
   { version:'人教版', grade:2, subject:'英语', question:'happy 是？', options:['伤心','开心','生气','害怕'], answer:1 },
+  { version:'人教版', grade:2, subject:'英语', question:'"爸爸"是？', options:['father','mother','sister','brother'], answer:0 },
+  { version:'人教版', grade:2, subject:'英语', question:'cat 是？', options:['猫','狗','鸟','鱼'], answer:0 },
+  { version:'人教版', grade:2, subject:'英语', question:'"红色"是？', options:['red','blue','green','yellow'], answer:0 },
+  { version:'人教版', grade:2, subject:'英语', question:'school 是？', options:['家','学校','公园','医院'], answer:1 },
+  { version:'人教版', grade:2, subject:'英语', question:'"冬天"是？', options:['spring','summer','autumn','winter'], answer:3 },
+  { version:'人教版', grade:2, subject:'英语', question:'six + two = ?', options:['seven','eight','nine','ten'], answer:1 },
+  { version:'人教版', grade:2, subject:'英语', question:'pen 是？', options:['铅笔','钢笔','橡皮','尺子'], answer:1 },
+  { version:'人教版', grade:2, subject:'英语', question:'"你好"是？', options:['hello','bye','sorry','thanks'], answer:0 },
+  { version:'人教版', grade:2, subject:'英语', question:'star 是？', options:['月亮','太阳','星星','云'], answer:2 },
+  { version:'人教版', grade:2, subject:'英语', question:'"春天"是？', options:['spring','summer','autumn','winter'], answer:0 },
 
   // ===== 三年级 数学 =====
   { version:'人教版', grade:3, subject:'数学', question:'125 × 4 = ?', options:['400','500','600','450'], answer:1 },
@@ -414,13 +444,13 @@ const QUESTION_BANK = [
   { version:'人教版', grade:6, subject:'英语', question:'"旅行"是？', options:['travel','work','study','play'], answer:0 },
 ];
 
-// 题库扩展：北师大版 & 苏教版（复用部分题目，添加版本标记，保证每个版本都有题）
+// 题库扩展：北师大版 & 苏教版（复用人教版题目，保证每个版本都有充足题目）
 function expandQuestionBank() {
   const extra = [];
   ['北师大版','苏教版'].forEach(ver => {
     QUESTION_BANK.forEach(q => {
-      // 每版本各添加部分题（取部分以控制总量）
-      if (Math.random() < 0.6) {
+      // 排除已经是该版本的题
+      if (q.version !== ver) {
         extra.push({ ...q, version: ver });
       }
     });
@@ -435,6 +465,125 @@ const QUESTION_OPTIONS = {
   grades: [1,2,3,4,5,6],
   subjects: ['语文','数学','英语'],
 };
+
+// ============ 英语学习教材（外研版 二升三） ============
+// 每单元包含若干单词/句子，学习后获金币奖励
+const ENGLISH_LESSONS = [
+  {
+    unit: 1, title: '问候与自我介绍',
+    words: [
+      { en: 'hello', cn: '你好', example: 'Hello, I am Mingming.' },
+      { en: 'hi', cn: '嗨', example: 'Hi, Sam!' },
+      { en: 'goodbye', cn: '再见', example: 'Goodbye, Ms Smart.' },
+      { en: 'bye', cn: '再见', example: 'Bye-bye!' },
+      { en: 'I', cn: '我', example: 'I am a boy.' },
+      { en: 'am', cn: '是', example: 'I am fine.' },
+      { en: 'name', cn: '名字', example: 'My name is Amy.' },
+      { en: 'my', cn: '我的', example: 'This is my book.' },
+    ],
+    sentence: 'Hello, my name is Amy. What\'s your name?',
+  },
+  {
+    unit: 2, title: '数字1-10',
+    words: [
+      { en: 'one', cn: '一', example: 'I have one pen.' },
+      { en: 'two', cn: '二', example: 'Two cats.' },
+      { en: 'three', cn: '三', example: 'Three dogs.' },
+      { en: 'four', cn: '四', example: 'Four birds.' },
+      { en: 'five', cn: '五', example: 'Five books.' },
+      { en: 'six', cn: '六', example: 'Six pencils.' },
+      { en: 'seven', cn: '七', example: 'Seven apples.' },
+      { en: 'eight', cn: '八', example: 'Eight oranges.' },
+      { en: 'nine', cn: '九', example: 'Nine birds.' },
+      { en: 'ten', cn: '十', example: 'Ten flowers.' },
+    ],
+    sentence: 'How many? One, two, three... ten!',
+  },
+  {
+    unit: 3, title: '颜色',
+    words: [
+      { en: 'red', cn: '红色', example: 'It is red.' },
+      { en: 'blue', cn: '蓝色', example: 'The sky is blue.' },
+      { en: 'yellow', cn: '黄色', example: 'A yellow banana.' },
+      { en: 'green', cn: '绿色', example: 'Green tree.' },
+      { en: 'black', cn: '黑色', example: 'Black cat.' },
+      { en: 'white', cn: '白色', example: 'White cloud.' },
+      { en: 'pink', cn: '粉色', example: 'A pink flower.' },
+      { en: 'orange', cn: '橙色', example: 'An orange orange.' },
+    ],
+    sentence: 'What colour is it? It is red and blue.',
+  },
+  {
+    unit: 4, title: '家庭成员',
+    words: [
+      { en: 'mother', cn: '妈妈', example: 'This is my mother.' },
+      { en: 'father', cn: '爸爸', example: 'My father is tall.' },
+      { en: 'sister', cn: '姐妹', example: 'I have a sister.' },
+      { en: 'brother', cn: '兄弟', example: 'My brother is little.' },
+      { en: 'grandma', cn: '奶奶/外婆', example: 'Grandma is kind.' },
+      { en: 'grandpa', cn: '爷爷/外公', example: 'Grandpa tells stories.' },
+      { en: 'family', cn: '家庭', example: 'I love my family.' },
+      { en: 'baby', cn: '宝宝', example: 'The baby is cute.' },
+    ],
+    sentence: 'This is my mother. This is my father.',
+  },
+  {
+    unit: 5, title: '动物',
+    words: [
+      { en: 'cat', cn: '猫', example: 'I have a cat.' },
+      { en: 'dog', cn: '狗', example: 'The dog is big.' },
+      { en: 'bird', cn: '鸟', example: 'A bird can fly.' },
+      { en: 'fish', cn: '鱼', example: 'Fish swim.' },
+      { en: 'rabbit', cn: '兔子', example: 'A white rabbit.' },
+      { en: 'pig', cn: '猪', example: 'The pig is pink.' },
+      { en: 'duck', cn: '鸭子', example: 'A yellow duck.' },
+      { en: 'cow', cn: '牛', example: 'The cow says moo.' },
+    ],
+    sentence: 'What is it? It is a cat. It is a dog.',
+  },
+  {
+    unit: 6, title: '食物与饮料',
+    words: [
+      { en: 'apple', cn: '苹果', example: 'I like apples.' },
+      { en: 'banana', cn: '香蕉', example: 'A yellow banana.' },
+      { en: 'orange', cn: '橘子', example: 'An orange is sweet.' },
+      { en: 'milk', cn: '牛奶', example: 'Drink milk every day.' },
+      { en: 'water', cn: '水', example: 'I want water.' },
+      { en: 'cake', cn: '蛋糕', example: 'A birthday cake.' },
+      { en: 'bread', cn: '面包', example: 'Bread for breakfast.' },
+      { en: 'rice', cn: '米饭', example: 'I eat rice.' },
+    ],
+    sentence: 'I like apples and bananas. Do you like milk?',
+  },
+  {
+    unit: 7, title: '学校用品',
+    words: [
+      { en: 'book', cn: '书', example: 'Open your book.' },
+      { en: 'pen', cn: '钢笔', example: 'This is my pen.' },
+      { en: 'pencil', cn: '铅笔', example: 'A red pencil.' },
+      { en: 'bag', cn: '书包', example: 'My school bag.' },
+      { en: 'ruler', cn: '尺子', example: 'A long ruler.' },
+      { en: 'eraser', cn: '橡皮', example: 'A white eraser.' },
+      { en: 'desk', cn: '桌子', example: 'My desk is clean.' },
+      { en: 'chair', cn: '椅子', example: 'Sit on the chair.' },
+    ],
+    sentence: 'What is in your bag? A book, a pen and a pencil.',
+  },
+  {
+    unit: 8, title: '身体部位',
+    words: [
+      { en: 'head', cn: '头', example: 'Touch your head.' },
+      { en: 'eye', cn: '眼睛', example: 'I have two eyes.' },
+      { en: 'ear', cn: '耳朵', example: 'I have two ears.' },
+      { en: 'nose', cn: '鼻子', example: 'Touch your nose.' },
+      { en: 'mouth', cn: '嘴', example: 'Open your mouth.' },
+      { en: 'hand', cn: '手', example: 'Wash your hands.' },
+      { en: 'foot', cn: '脚', example: 'I have two feet.' },
+      { en: 'face', cn: '脸', example: 'Wash your face.' },
+    ],
+    sentence: 'Touch your head. Touch your nose. Touch your eyes.',
+  },
+];
 
 // 节日活动配置
 const FESTIVALS = [
@@ -464,5 +613,5 @@ window.GAME_DATA = {
   PET_DEFS, FOOD_DEFS, ACCESSORY_DEFS, FURNITURE_DEFS, MAP_DEFS,
   PACKAGE_DEFS, INTERACTIONS, SKILL_DEFS, ACHIEVEMENTS, RANDOM_EVENTS,
   FORTUNES, DEFAULT_TASKS, QUESTION_BANK, QUESTION_OPTIONS,
-  FESTIVALS, MONTHLY_CHALLENGES, PET_TALKS,
+  FESTIVALS, MONTHLY_CHALLENGES, PET_TALKS, ENGLISH_LESSONS,
 };

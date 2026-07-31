@@ -38,6 +38,9 @@ function getDefaultState() {
     monthlyChallenge: { month:'', signDays:0, answerRight:0, tasksDone:0, rewards:[] }, // 月度挑战进度
     monthCard: { active:false, daysLeft:0, lastClaim:'' }, // 月卡
     dailyPlayAll: { date:'', count:0 }, // 一起玩每日次数
+    accounts: [],                  // 记账记录 [{id, type:'income'|'expense', category, amount, note, time}]
+    dailyAccountReward: { date:'', count:0 }, // 记账奖励每日次数
+    englishProgress: { date:'', learned:0, totalLearned:0 }, // 英语学习进度
     sound: { bgm:true, effect:true }, // 音效开关
     stats: {                       // 统计数据（用于学习报告）
       weekStart: '',               // 周一日期
@@ -89,6 +92,8 @@ const Storage = {
         this.state.monthlyChallenge = Object.assign({}, def.monthlyChallenge, saved.monthlyChallenge||{});
         this.state.sound = Object.assign({}, def.sound, saved.sound||{});
         this.state.dailyPlayAll = Object.assign({}, def.dailyPlayAll, saved.dailyPlayAll||{});
+        this.state.dailyAccountReward = Object.assign({}, def.dailyAccountReward, saved.dailyAccountReward||{});
+        this.state.englishProgress = Object.assign({}, def.englishProgress, saved.englishProgress||{});
       } else {
         this.state = getDefaultState();
         this.save();

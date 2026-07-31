@@ -679,11 +679,19 @@ function confirmRename() {
   if (!name) { toast('请输入名字'); return; }
   if (name.length > 6) { toast('名字最多6个字'); return; }
   if (!spendCoin(50)) return;
-  getActivePet().name = name;
+  const pet = getActivePet();
+  const oldName = pet.name;
+  pet.name = name;
+  // 同步更新该宠物的所有历史日记中的名字
+  S.diaries.forEach(d => {
+    if (d.petId === pet.id && d.petName === oldName) {
+      d.petName = name;
+    }
+  });
   Storage.save();
   closeModal();
   openPetDetail();
-  toast('改名成功！');
+  toast('改名成功！日记名字已同步更新~');
 }
 
 // 使用技能
@@ -838,57 +846,71 @@ function confirmAddTask() {
 
 // ============ 答题器 ============
 let quizState = null;
+let quizSelected = { version:'人教版', grade:1, subject:'数学' };
+
 function startQuiz() {
   // 选择教材
   const opt = D.QUESTION_OPTIONS;
+  const renderOpts = (key, list, labelFn) => {
+    return list.map((item, i) => {
+      const sel = quizSelected[key] === item;
+      return `<button class="quiz-opt-btn ${sel?'sel':''}" data-i="${i}" data-key="${key}" data-val="${typeof item==='number'?item:item}" style="padding:8px 14px;border-radius:10px;background:${sel?'#5B9BD5':'#EAF6FF'};color:${sel?'#fff':'#5a6a7c'};font-size:13px;border:none;font-family:inherit;cursor:pointer">${labelFn(item)}</button>`;
+    }).join('');
+  };
   showModal('📝 答题赚金币', `
     <div style="margin-bottom:12px">
       <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">教材版本</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="qVersion">
-        ${opt.versions.map((v,i)=>`<button class="quiz-opt-btn" data-v="${v}" style="padding:8px 14px;border-radius:10px;background:${i===0?'#5B9BD5':'#EAF6FF'};color:${i===0?'#fff':'#5a6a7c'};font-size:13px">${v}</button>`).join('')}
+        ${renderOpts('version', opt.versions, v=>v)}
       </div>
     </div>
     <div style="margin-bottom:12px">
       <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">年级</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="qGrade">
-        ${opt.grades.map((g,i)=>`<button class="quiz-opt-btn" data-g="${g}" style="padding:8px 14px;border-radius:10px;background:${i===0?'#5B9BD5':'#EAF6FF'};color:${i===0?'#fff':'#5a6a7c'};font-size:13px">${g}年级</button>`).join('')}
+        ${renderOpts('grade', opt.grades, g=>g+'年级')}
       </div>
     </div>
     <div style="margin-bottom:12px">
       <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">科目</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap" id="qSubject">
-        ${opt.subjects.map((s,i)=>`<button class="quiz-opt-btn" data-s="${s}" style="padding:8px 14px;border-radius:10px;background:${i===0?'#5B9BD5':'#EAF6FF'};color:${i===0?'#fff':'#5a6a7c'};font-size:13px">${s}</button>`).join('')}
+        ${renderOpts('subject', opt.subjects, s=>s)}
       </div>
     </div>
     <div style="font-size:12px;color:#8aa5b8;text-align:center">每日最多200金币 · 答对+10 · 满分+20</div>
   `, `<button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-primary" onclick="beginQuiz()">开始答题</button>`);
   // 选项点击切换
-  ['qVersion','qGrade','qSubject'].forEach(id=>{
-    $('#'+id).addEventListener('click', e=>{
-      if (e.target.dataset.v!==undefined || e.target.dataset.g!==undefined || e.target.dataset.s!==undefined) {
-        $$('#'+id+' button').forEach(b=>{b.style.background='#EAF6FF';b.style.color='#5a6a7c';});
-        e.target.style.background='#5B9BD5'; e.target.style.color='#fff';
-      }
+  $$('.quiz-opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      const val = btn.dataset.val;
+      const parsed = key==='grade' ? parseInt(val) : val;
+      quizSelected[key] = parsed;
+      // 重新渲染弹窗
+      startQuiz();
     });
   });
 }
 
 function beginQuiz() {
-  const version = $('#qVersion .quiz-opt-btn[style*="5B9BD5"]')?.dataset.v || '人教版';
-  const grade = parseInt($('#qGrade .quiz-opt-btn[style*="5B9BD5"]')?.dataset.g || 1);
-  const subject = $('#qSubject .quiz-opt-btn[style*="5B9BD5"]')?.dataset.s || '数学';
+  const version = quizSelected.version;
+  const grade = quizSelected.grade;
+  const subject = quizSelected.subject;
   closeModal();
-  // 筛选题目
+  // 筛选题目：优先同版本同年级同科目
   let pool = D.QUESTION_BANK.filter(q=>q.version===version && q.grade===grade && q.subject===subject);
   if (pool.length < 10) {
-    // 不足则补充同年级同科目
-    pool = pool.concat(D.QUESTION_BANK.filter(q=>q.grade===grade && q.subject===subject));
+    // 不足则补充同年级同科目（任何版本）
+    const extra = D.QUESTION_BANK.filter(q=>q.grade===grade && q.subject===subject && !pool.includes(q));
+    pool = pool.concat(extra);
   }
   if (pool.length < 10) {
-    pool = pool.concat(D.QUESTION_BANK.filter(q=>q.subject===subject));
+    // 再不足则补充同科目（任何版本任何年级）
+    const extra2 = D.QUESTION_BANK.filter(q=>q.subject===subject && !pool.includes(q));
+    pool = pool.concat(extra2);
   }
-  // 打乱取10题
+  // 去重并打乱取10题
+  pool = pool.filter((q,i,arr)=>arr.indexOf(q)===i);
   pool.sort(()=>Math.random()-0.5);
   pool = pool.slice(0, 10);
   quizState = { questions:pool, idx:0, correct:0, version, grade, subject };
@@ -2378,6 +2400,8 @@ function bindEvents() {
   // 任务页按钮
   $('#btnAnswer').addEventListener('click', startQuiz);
   $('#btnAddTask').addEventListener('click', addTask);
+  $('#btnAccount').addEventListener('click', openAccount);
+  $('#btnEnglish').addEventListener('click', openEnglish);
 }
 
 // ============ 初始化 ============
@@ -2419,4 +2443,300 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
+}
+
+// ============ 记账功能 ============
+const ACCOUNT_CATEGORIES_EXPENSE = [
+  { id:'snack', name:'零食', emoji:'🍬', limit:5 },
+  { id:'toy', name:'玩具', emoji:'🧸', limit:30 },
+  { id:'stationery', name:'文具', emoji:'✏️', limit:10 },
+  { id:'food', name:'吃饭', emoji:'🍚', limit:20 },
+  { id:'other', name:'其他', emoji:'📦', limit:10 },
+];
+const ACCOUNT_CATEGORIES_INCOME = [
+  { id:'redpacket', name:'红包', emoji:'🧧' },
+  { id:'reward', name:'奖励', emoji:'🎁' },
+  { id:'other_in', name:'其他', emoji:'💰' },
+];
+
+function openAccount() {
+  const today = Storage.todayStr();
+  const todayList = S.accounts.filter(a => {
+    const d = new Date(a.time);
+    return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate() === today;
+  });
+  const todayExpense = todayList.filter(a=>a.type==='expense').reduce((s,a)=>s+a.amount, 0);
+  const todayIncome = todayList.filter(a=>a.type==='income').reduce((s,a)=>s+a.amount, 0);
+  // 本周统计
+  const monday = Storage.mondayStr();
+  const weekList = S.accounts.filter(a => {
+    const d = new Date(a.time);
+    return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate() >= monday;
+  });
+  const weekExpense = weekList.filter(a=>a.type==='expense').reduce((s,a)=>s+a.amount, 0);
+
+  let listHTML = '';
+  if (!todayList.length) {
+    listHTML = '<div style="text-align:center;color:#8aa5b8;padding:20px">今天还没有记账哦~</div>';
+  } else {
+    listHTML = todayList.slice().reverse().map(a => {
+      const cats = a.type==='expense' ? ACCOUNT_CATEGORIES_EXPENSE : ACCOUNT_CATEGORIES_INCOME;
+      const cat = cats.find(c=>c.id===a.category) || cats[cats.length-1];
+      return `<div class="account-item ${a.type}">
+        <div style="font-size:24px">${cat.emoji}</div>
+        <div style="flex:1">
+          <div style="font-weight:bold;color:#3a4a5c">${cat.name}${a.note?' · '+a.note:''}</div>
+          <div style="font-size:11px;color:#8aa5b8">${formatTime(a.time)}</div>
+        </div>
+        <div style="font-weight:bold;color:${a.type==='expense'?'#e57373':'#66BB6A'}">${a.type==='expense'?'-':'+'}${a.amount}元</div>
+        <span style="color:#e57373;font-size:16px;cursor:pointer;margin-left:6px" onclick="deleteAccount('${a.id}')">🗑️</span>
+      </div>`;
+    }).join('');
+  }
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="closeFullscreen()">← 返回</button>
+      <div class="fs-title">💰 小记账本</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:14px">
+      <div class="account-summary">
+        <div class="summary-card expense">
+          <div style="font-size:12px;color:#8aa5b8">今日支出</div>
+          <div style="font-size:20px;font-weight:bold;color:#e57373">${todayExpense}元</div>
+        </div>
+        <div class="summary-card income">
+          <div style="font-size:12px;color:#8aa5b8">今日收入</div>
+          <div style="font-size:20px;font-weight:bold;color:#66BB6A">${todayIncome}元</div>
+        </div>
+        <div class="summary-card week">
+          <div style="font-size:12px;color:#8aa5b8">本周支出</div>
+          <div style="font-size:20px;font-weight:bold;color:#5B9BD5">${weekExpense}元</div>
+        </div>
+      </div>
+      <div class="account-tip">💡 小朋友，花钱要有计划哦！<br>每记一次账奖励5金币，每天最多5次</div>
+      <div style="margin:12px 0">
+        <div style="font-size:14px;font-weight:bold;color:#3a4a5c;margin-bottom:8px">今日记录</div>
+        ${listHTML}
+      </div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-warning" style="flex:1" onclick="addAccount('expense')">➕ 记支出</button>
+      <button class="btn-success" style="flex:1" onclick="addAccount('income')">➕ 记收入</button>
+    </div>
+  `);
+}
+
+function addAccount(type) {
+  const cats = type==='expense' ? ACCOUNT_CATEGORIES_EXPENSE : ACCOUNT_CATEGORIES_INCOME;
+  const catHTML = cats.map((c,i)=>`<button class="account-cat-btn ${i===0?'sel':''}" data-cat="${c.id}" onclick="selectAccountCat(this)">${c.emoji} ${c.name}</button>`).join('');
+  showModal(type==='expense'?'➕ 记支出':'➕ 记收入', `
+    <div style="margin-bottom:10px">
+      <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">分类</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="accCats">${catHTML}</div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">金额（元）</div>
+      <input id="accAmount" type="number" min="0" step="0.5" placeholder="如 5" style="width:100%;padding:10px;border:2px solid #D4ECFC;border-radius:10px;font-size:16px">
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">备注（选填）</div>
+      <input id="accNote" type="text" maxlength="20" placeholder="如 买了小蛋糕" style="width:100%;padding:10px;border:2px solid #D4ECFC;border-radius:10px;font-size:14px">
+    </div>
+    ${type==='expense' ? '<div style="font-size:12px;color:#FFA726;background:#FFF8E1;padding:8px;border-radius:8px">💡 想一想：这个东西真的需要吗？<br>是不是已经有类似的了？</div>' : ''}
+  `, `<button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-primary" onclick="confirmAddAccount('${type}')">保存</button>`);
+}
+
+let _selectedAccCat = null;
+function selectAccountCat(btn) {
+  $$('#accCats .account-cat-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  _selectedAccCat = btn.dataset.cat;
+}
+
+function confirmAddAccount(type) {
+  const amount = parseFloat($('#accAmount').value);
+  if (!amount || amount <= 0) { toast('请输入正确金额'); return; }
+  const note = $('#accNote').value.trim();
+  const category = _selectedAccCat || (type==='expense' ? ACCOUNT_CATEGORIES_EXPENSE[0].id : ACCOUNT_CATEGORIES_INCOME[0].id);
+  S.accounts.push({ id:'a_'+Date.now(), type, category, amount, note, time:Date.now() });
+  // 奖励金币（每日最多5次）
+  const today = Storage.todayStr();
+  if (S.dailyAccountReward.date !== today) S.dailyAccountReward = { date:today, count:0 };
+  let reward = 0;
+  if (S.dailyAccountReward.count < 5) {
+    S.dailyAccountReward.count++;
+    reward = 5;
+    addCoin(reward);
+  }
+  Storage.save();
+  closeModal();
+  _selectedAccCat = null;
+  // 理财小教育
+  if (type==='expense' && amount >= 20) {
+    setTimeout(()=>{
+      toast('💡 大额支出要和爸爸妈妈商量哦~');
+    }, 500);
+  } else if (reward > 0) {
+    toast(`记账成功！+${reward}金币 🎉`);
+  } else {
+    toast('记账成功~');
+  }
+  // 刷新记账页面
+  openAccount();
+}
+
+function deleteAccount(id) {
+  if (!confirm('删除这条记录？')) return;
+  S.accounts = S.accounts.filter(a=>a.id !== id);
+  Storage.save();
+  toast('已删除');
+  openAccount();
+}
+
+// ============ 英语学习功能（外研版 二升三） ============
+let englishState = null;
+
+function openEnglish() {
+  const today = Storage.todayStr();
+  if (S.englishProgress.date !== today) S.englishProgress = { date:today, learned:0, totalLearned:S.englishProgress.totalLearned||0 };
+  const lessons = D.ENGLISH_LESSONS;
+  let listHTML = lessons.map(l => {
+    const done = (S.englishProgress.totalLearned||0) >= l.unit * 8;
+    return `<div class="english-unit ${done?'done':''}" onclick="startEnglishLesson(${l.unit})">
+      <div style="font-size:32px">${done?'✅':'📖'}</div>
+      <div style="flex:1">
+        <div style="font-weight:bold;color:#3a4a5c">Unit ${l.unit} · ${l.title}</div>
+        <div style="font-size:12px;color:#8aa5b8">${l.words.length}个单词 · ${done?'已完成':'点击学习'}</div>
+      </div>
+      <div style="color:#5B9BD5;font-size:20px">▶</div>
+    </div>`;
+  }).join('');
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="closeFullscreen()">← 返回</button>
+      <div class="fs-title">🔤 英语学习</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:14px">
+      <div class="english-info">
+        <div style="font-size:14px;color:#5a6a7c;margin-bottom:6px">📚 外研版（三年级起点）· 二升三衔接</div>
+        <div style="font-size:13px;color:#8aa5b8">今日学习：${S.englishProgress.learned} 词 · 累计：${S.englishProgress.totalLearned} 词</div>
+        <div style="font-size:12px;color:#66BB6A;margin-top:6px">🎁 每学完1个单元奖励20金币！</div>
+      </div>
+      <div style="margin-top:12px">${listHTML}</div>
+    </div>
+  `);
+}
+
+function startEnglishLesson(unit) {
+  const lesson = D.ENGLISH_LESSONS.find(l=>l.unit===unit);
+  if (!lesson) return;
+  englishState = { lesson, idx:0, learned:0 };
+  showEnglishWord();
+}
+
+function showEnglishWord() {
+  if (!englishState) return;
+  const { lesson, idx } = englishState;
+  if (idx >= lesson.words.length) {
+    // 学完本单元，显示句子并奖励
+    finishEnglishLesson();
+    return;
+  }
+  const w = lesson.words[idx];
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="quitEnglish()">← 退出</button>
+      <div class="fs-title">📖 Unit ${lesson.unit} · ${lesson.title}</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="quiz-progress">
+      <span>第 ${idx+1} / ${lesson.words.length} 个单词</span>
+      <span style="color:#66BB6A">✅ ${englishState.learned}</span>
+    </div>
+    <div class="english-word-card">
+      <div class="english-en">${w.en}</div>
+      <div class="english-cn">${w.cn}</div>
+      <div class="english-example">💬 ${w.example}</div>
+      <button class="english-speak-btn" onclick="speakEnglish('${w.en}')">🔊 听发音</button>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      ${idx>0?'<button class="btn-cancel" style="flex:1" onclick="englishPrev()">← 上一个</button>':''}
+      <button class="btn-primary" style="flex:2" onclick="englishNext()">我学会了 →</button>
+    </div>
+  `);
+}
+
+function englishNext() {
+  englishState.learned++;
+  englishState.idx++;
+  Sound.play('success');
+  showEnglishWord();
+}
+
+function englishPrev() {
+  if (englishState.idx > 0) {
+    englishState.idx--;
+    showEnglishWord();
+  }
+}
+
+function quitEnglish() {
+  if (confirm('退出学习？已学的会保存进度')) {
+    closeFullscreen();
+    englishState = null;
+  }
+}
+
+function finishEnglishLesson() {
+  const { lesson } = englishState;
+  const today = Storage.todayStr();
+  if (S.englishProgress.date !== today) S.englishProgress = { date:today, learned:0, totalLearned:S.englishProgress.totalLearned||0 };
+  // 判断是否首次完成该单元
+  const wasComplete = (S.englishProgress.totalLearned||0) >= lesson.unit * 8;
+  S.englishProgress.learned += lesson.words.length;
+  S.englishProgress.totalLearned = (S.englishProgress.totalLearned||0) + lesson.words.length;
+  let reward = 0;
+  if (!wasComplete) {
+    reward = 20;
+    addCoin(reward);
+  }
+  Storage.save();
+  Sound.play('levelup');
+  openFullscreen(`
+    <div class="fs-header"><div class="fs-title">🎉 学完啦！</div><div style="width:60px"></div></div>
+    <div class="quiz-result">
+      <div class="result-emoji">🎓</div>
+      <div class="result-text">Unit ${lesson.unit} 完成！</div>
+      <div style="margin:12px 0;padding:12px;background:#EAF6FF;border-radius:10px;font-size:14px;color:#3a4a5c">
+        <div style="font-weight:bold;margin-bottom:6px">📝 本单元句子：</div>
+        ${lesson.sentence}
+      </div>
+      ${reward>0?`<div class="result-coin">🪙 +${reward} 金币</div>`:'<div style="color:#8aa5b8;font-size:13px">重复学习不再奖励金币~</div>'}
+      <div style="margin-top:10px;font-size:13px;color:#66BB6A">累计学习：${S.englishProgress.totalLearned} 个单词</div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="openEnglish()">返回单元列表</button>
+      <button class="btn-primary" style="flex:1" onclick="speakEnglish('${lesson.sentence.replace(/'/g,"\\'")}')">🔊 听句子</button>
+    </div>
+  `);
+  englishState = null;
+}
+
+// 朗读英语（使用浏览器语音合成）
+function speakEnglish(text) {
+  if (!('speechSynthesis' in window)) { toast('浏览器不支持发音~'); return; }
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.8;
+    window.speechSynthesis.speak(u);
+  } catch(e) {
+    toast('发音失败~');
+  }
 }

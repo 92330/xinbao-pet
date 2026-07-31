@@ -685,6 +685,65 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
 ::-webkit-scrollbar { width:4px; height:4px; }
 ::-webkit-scrollbar-thumb { background:rgba(91,155,213,0.3); border-radius:2px; }
 
+/* ============ 记账功能样式 ============ */
+.account-summary {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;
+}
+.summary-card {
+  background:#fff; padding:12px 8px; border-radius:12px; text-align:center;
+  box-shadow:0 2px 6px rgba(100,150,200,0.12);
+}
+.summary-card.expense { border-top:3px solid #e57373; }
+.summary-card.income { border-top:3px solid #66BB6A; }
+.summary-card.week { border-top:3px solid #5B9BD5; }
+.account-tip {
+  background:#E8F5E9; padding:10px 12px; border-radius:10px;
+  font-size:12px; color:#2E7D32; line-height:1.6; text-align:center;
+}
+.account-item {
+  display:flex; align-items:center; gap:10px;
+  background:#fff; padding:10px 12px; border-radius:10px;
+  box-shadow:0 1px 4px rgba(100,150,200,0.1); margin-bottom:6px;
+}
+.account-cat-btn {
+  padding:8px 12px; border-radius:10px; background:#EAF6FF;
+  color:#5a6a7c; font-size:13px; border:none; cursor:pointer; font-family:inherit;
+}
+.account-cat-btn.sel { background:#5B9BD5; color:#fff; }
+
+/* ============ 英语学习样式 ============ */
+.english-info {
+  background:#EAF6FF; padding:12px; border-radius:12px;
+}
+.english-unit {
+  display:flex; align-items:center; gap:12px;
+  background:#fff; padding:12px; border-radius:12px; margin-bottom:8px;
+  box-shadow:0 2px 6px rgba(100,150,200,0.1); cursor:pointer;
+  transition:transform 0.15s;
+}
+.english-unit:active { transform:scale(0.98); }
+.english-unit.done { background:#E8F5E9; }
+.english-word-card {
+  text-align:center; padding:30px 20px; margin:16px;
+  background:linear-gradient(135deg,#CDE9FF,#D4ECFC); border-radius:20px;
+}
+.english-en {
+  font-size:36px; font-weight:bold; color:#1565C0; margin-bottom:10px;
+}
+.english-cn {
+  font-size:22px; color:#3a4a5c; margin-bottom:16px;
+}
+.english-example {
+  font-size:14px; color:#5a6a7c; padding:10px;
+  background:rgba(255,255,255,0.6); border-radius:10px; margin-bottom:12px;
+}
+.english-speak-btn {
+  padding:10px 20px; border-radius:20px; background:#fff;
+  border:2px solid #5B9BD5; color:#5B9BD5; font-size:14px;
+  cursor:pointer; font-family:inherit;
+}
+.english-speak-btn:active { background:#5B9BD5; color:#fff; }
+
 /* ============ 响应式 ============ */
 @media (max-width:360px) {
   .shop-list { grid-template-columns:repeat(2,1fr); }
