@@ -165,6 +165,7 @@ function switchPage(name) {
   else if (name==='shop') renderShop();
   else if (name==='album') renderAlbum();
   else if (name==='game') renderGameCenter();
+  else if (name==='more') renderMorePage();
 }
 
 // ============ 每日刷新 ============
@@ -2576,6 +2577,42 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
+}
+
+// ============ 更多页面 ============
+function renderMorePage() {
+  const coinEl = $('#moreCoin');
+  if (coinEl) coinEl.textContent = '🪙 ' + S.coin;
+  const c = $('#moreContent');
+  if (!c) return;
+  // 判断信鸽是否有访客
+  const travelerActive = S.travelers && S.travelers.current;
+  // 判断昆虫旅馆是否已建造
+  const bugOwned = S.featureFun && S.featureFun.bugHotel && S.featureFun.bugHotel.owned;
+  // 构建卡片列表
+  const cards = [
+    { icon:'🕊️', name:'信鸽来访者', desc: travelerActive ? '有访客等你接待！' : '查看旅行者赠送的礼物', action: travelerActive ? 'showTraveler()' : 'showTraveler()', active: travelerActive, badge: travelerActive ? '!' : '' },
+    { icon:'🏨', name:'昆虫旅馆', desc: bugOwned ? '查看房客与入住情况' : '建造昆虫旅馆(100金币)', action: bugOwned ? 'openBugHotel()' : 'openBugHotel()' },
+    { icon:'📰', name:'欣宝小镇周报', desc:'查看本周精彩回顾与趣味小知识', action:'fdOpenNewspaper()' },
+    { icon:'⏳', name:'时光胶囊', desc:'给未来的自己写一句话', action:'fdOpenTimeCapsule()' },
+    { icon:'✏️', name:'宠物签名', desc:'给宠物设一句个性签名', action:'fdOpenSignature()' },
+    { icon:'🎨', name:'主题色', desc:'挑选喜欢的颜色打扮界面', action:'fdOpenThemeColor()' },
+    { icon:'🧪', name:'宠物性格测试', desc:'测测你的宠物是什么性格', action:'fdOpenPersonality()' },
+    { icon:'👨‍👩‍👧', name:'家长控制', desc:'任务管理 · 时长限制 · 学习报告', action:'openParentPanel()' },
+    { icon:'🏆', name:'成就墙', desc:'查看成就与奖励', action:'openAchievements()' },
+    { icon:'⚙️', name:'设置', desc:'音乐 · 音效 · 关于', action:'openSettings()' },
+  ];
+  c.innerHTML = `
+    <div class="more-grid">
+      ${cards.map(card => `
+        <div class="more-card ${card.active?'more-card-active':''}" onclick="${card.action}">
+          <div class="more-card-icon">${card.icon}${card.badge?`<span class="more-badge">${card.badge}</span>`:''}</div>
+          <div class="more-card-name">${card.name}</div>
+          <div class="more-card-desc">${card.desc}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 // ============ 记账功能 ============

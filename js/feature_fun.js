@@ -746,15 +746,7 @@
       homeFunc.appendChild(t);
     }
 
-    // 昆虫旅馆图标（右下角悬浮）
-    if (!document.getElementById('ff-bughotel-icon')) {
-      var b = document.createElement('div');
-      b.id = 'ff-bughotel-icon';
-      b.className = 'ff-home-icon ff-bughotel-icon';
-      b.innerHTML = '<span class="ff-icon-emoji">🏨</span>';
-      b.addEventListener('click', openBugHotel);
-      scene.appendChild(b);
-    }
+    // 昆虫旅馆图标已移至"更多"页面，不再在主页浮动注入
     refreshHomeIcons();
   }
 

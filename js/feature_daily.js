@@ -650,29 +650,10 @@
     checkTimeCapsules();
   }
 
-  // ============ 设置页卡片注入 ============
+  // ============ 设置页卡片注入（已移至"更多"页面，这里仅保留函数供其他地方调用） ============
   function injectSettingsCards() {
-    var fs = $('#fullscreen');
-    if (!fs || fs.classList.contains('hidden')) return;
-    var title = fs.querySelector('.fs-title');
-    if (!title || title.textContent.indexOf('设置') === -1) return;
-    var body = fs.querySelector('.fs-body');
-    if (!body) return;
-    if (body.querySelector('#fdSettingsCards')) return;
-    var wrap = document.createElement('div');
-    wrap.id = 'fdSettingsCards';
-    wrap.innerHTML =
-      '<div class="info-card fd-card" onclick="fdOpenNewspaper()" style="cursor:pointer">' +
-      '<h3>📰 欣宝小镇周报</h3><p>查看本周精彩回顾与趣味小知识</p></div>' +
-      '<div class="info-card fd-card" onclick="fdOpenTimeCapsule()" style="cursor:pointer">' +
-      '<h3>⏳ 时光胶囊</h3><p>给未来的自己写一句话</p></div>' +
-      '<div class="info-card fd-card" onclick="fdOpenSignature()" style="cursor:pointer">' +
-      '<h3>✏️ 宠物签名</h3><p>给宠物设一句个性签名</p></div>' +
-      '<div class="info-card fd-card" onclick="fdOpenThemeColor()" style="cursor:pointer">' +
-      '<h3>🎨 主题色</h3><p>挑选喜欢的颜色打扮界面</p></div>' +
-      '<div class="info-card fd-card" onclick="fdOpenPersonality()" style="cursor:pointer">' +
-      '<h3>🧪 宠物性格测试</h3><p>测测你的宠物是什么性格</p></div>';
-    body.appendChild(wrap);
+    // 周报/胶囊/签名/主题色/性格测试 已移至"更多"页面，不再注入设置页
+    return;
   }
 
   // ============ 主页注入（电台图标/节日横幅/签名性格/睡衣） ============

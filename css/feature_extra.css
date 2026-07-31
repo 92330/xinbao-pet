@@ -1,0 +1,427 @@
+/**
+ * 欣宝小宠 - 第三批深度功能样式 (feature_extra)
+ * 前缀 fe- 避免与主样式冲突
+ * 包含8个功能：樱花树计划升级 / 时光沙漏 / 告别传承 / 祖父母模式
+ *              家族荣誉榜 / AR相机 / 语音助手 / AI聊天
+ */
+
+/* ============ 通用按钮与输入 ============ */
+.fe-btn {
+  padding: 10px 16px; border-radius: 14px;
+  background: #5B9BD5; color: #fff;
+  font-size: 14px; font-weight: bold;
+  box-shadow: 0 2px 6px rgba(91,155,213,0.3);
+}
+.fe-btn:active { transform: scale(0.96); }
+.fe-btn.green { background: #66BB6A; box-shadow: 0 2px 6px rgba(102,187,106,0.3); }
+.fe-btn.yellow { background: #FFD54F; color: #5a4a00; }
+.fe-btn:disabled { background: #ccc; color: #fff; box-shadow: none; }
+
+.fe-input {
+  width: 100%; padding: 10px 12px;
+  border: 2px solid #D4ECFC; border-radius: 12px;
+  font-size: 14px; font-family: inherit; color: #3a4a5c;
+  margin: 6px 0; background: #fff; box-sizing: border-box;
+}
+.fe-input:focus { outline: none; border-color: #5B9BD5; }
+
+/* ============ 1. 樱花树计划升级版 ============ */
+.fe-cherry-tree {
+  position: absolute; top: 56px; left: 8px; z-index: 5;
+  background: rgba(255,255,255,0.85); border-radius: 50%;
+  width: 46px; height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(100,150,200,0.25); cursor: pointer;
+  transition: transform .15s;
+}
+.fe-cherry-tree:active { transform: scale(0.92); }
+.fe-cherry-tree-icon { font-size: 24px; line-height: 1; }
+.fe-cherry-badge {
+  position: absolute; top: -4px; right: -4px;
+  background: #FF5252; color: #fff; font-size: 10px;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; font-weight: bold; border: 1.5px solid #fff;
+}
+.fe-cherry-tree.spring {
+  background: linear-gradient(135deg, #FFE0EC, #FFC1D9);
+  animation: feGlow 2s ease-in-out infinite;
+}
+.fe-cherry-bloom {
+  font-size: 56px; line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(255,143,180,0.4));
+  animation: fePop 0.6s ease;
+}
+.fe-spring-effect {
+  position: absolute; top: -24px; left: -16px; right: -16px; bottom: -24px;
+  pointer-events: none; overflow: visible;
+}
+.fe-petal {
+  position: absolute; top: -10px; font-size: 14px;
+  animation: fePetalFall 4s linear infinite;
+}
+@keyframes fePetalFall {
+  0% { transform: translateY(-10px) rotate(0); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(90px) rotate(360deg); opacity: 0; }
+}
+.fe-event-item {
+  background: #FFF0F5; padding: 10px 12px; border-radius: 10px;
+  margin: 6px 0; font-size: 13px; color: #5a4a5c;
+  display: flex; justify-content: space-between; align-items: center; gap: 6px;
+}
+.fe-event-item > span:first-child { flex: 1; }
+.fe-event-del {
+  background: rgba(255,82,82,0.15); border-radius: 8px;
+  width: 26px; height: 26px; font-size: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.fe-event-del:active { transform: scale(0.9); }
+@keyframes feGlow {
+  0%,100% { box-shadow: 0 2px 12px rgba(255,143,180,0.4); }
+  50% { box-shadow: 0 2px 20px rgba(255,193,7,0.75); }
+}
+
+/* ============ 2. 时光沙漏 ============ */
+.fe-hourglass-card {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 12px 12px; padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #B0BEC5, #78909C);
+  color: #fff; box-shadow: 0 4px 14px rgba(120,144,156,0.35);
+  position: relative; overflow: hidden;
+}
+.fe-hourglass-emoji {
+  font-size: 40px; line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  animation: feSpin 4s ease-in-out infinite;
+}
+.fe-hourglass-info { flex: 1; }
+.fe-hourglass-title { font-size: 16px; font-weight: bold; }
+.fe-hourglass-sub { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+.fe-hourglass-btn {
+  padding: 8px 14px; border-radius: 14px;
+  background: #FFD54F; color: #5a4500; font-weight: bold; font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15); flex-shrink: 0;
+}
+.fe-hourglass-btn.owned { background: #66BB6A; color: #fff; }
+.fe-hourglass-btn:active { transform: scale(0.95); }
+
+.fe-hourglass-stage {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 24px; gap: 20px;
+  background: linear-gradient(180deg, #1a2540, #2c3e70);
+  color: #fff;
+}
+.fe-hourglass-anim {
+  font-size: 96px; line-height: 1;
+  animation: feRotate 2s linear infinite;
+  filter: drop-shadow(0 0 16px rgba(255,213,79,0.6));
+}
+.fe-hourglass-pet {
+  font-size: 120px; line-height: 1;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+  transition: transform .6s;
+}
+.fe-hourglass-pet.baby { transform: scale(0.6); }
+.fe-hourglass-label {
+  font-size: 18px; font-weight: bold;
+}
+@keyframes feSpin {
+  0%,100% { transform: rotate(0); }
+  50% { transform: rotate(180deg); }
+}
+@keyframes feRotate {
+  from { transform: rotate(0); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============ 3. 告别与传承 ============ */
+.fe-farewell-btn { background: rgba(255,138,101,0.85) !important; }
+.fe-farewell-scene {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 32px 24px; gap: 24px;
+  background: linear-gradient(180deg, #FFE0B2, #FFCCBC);
+  text-align: center;
+}
+.fe-farewell-pet {
+  font-size: 120px; line-height: 1;
+  filter: drop-shadow(0 6px 12px rgba(255,138,101,0.4));
+  animation: feFade 2s ease-in-out infinite;
+}
+.fe-farewell-msg {
+  font-size: 15px; color: #5a4a3c; line-height: 1.7;
+  max-width: 320px; padding: 14px; background: rgba(255,255,255,0.85);
+  border-radius: 14px;
+}
+.fe-farewell-gift {
+  background: rgba(255,255,255,0.9); padding: 16px 24px;
+  border-radius: 16px; box-shadow: 0 4px 14px rgba(255,193,7,0.4);
+  animation: fePop 0.5s ease;
+}
+.fe-farewell-done-btn {
+  padding: 12px 32px; border-radius: 16px;
+  background: #FF8A65; color: #fff; font-size: 15px; font-weight: bold;
+  box-shadow: 0 4px 10px rgba(255,138,101,0.4);
+}
+.fe-farewell-done-btn:active { transform: scale(0.97); }
+.fe-memorial-list { max-height: 320px; overflow-y: auto; padding: 6px; }
+.fe-memorial-item {
+  display: flex; align-items: center; gap: 10px;
+  background: #FFF8E1; padding: 10px 12px; border-radius: 12px;
+  margin: 6px 0;
+}
+.fe-memorial-emoji { font-size: 32px; }
+.fe-memorial-info { flex: 1; text-align: left; }
+.fe-memorial-info > div:first-child { font-weight: bold; }
+@keyframes feFade {
+  0%,100% { opacity: 1; transform: translateY(0); }
+  50% { opacity: 0.7; transform: translateY(-6px); }
+}
+@keyframes fePop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* ============ 4. 祖父母模式 ============ */
+.fe-settings-card { margin: 12px; }
+.fe-grandpa-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: #fff;
+  border-bottom: 1px solid #E8F0F8; flex-shrink: 0;
+  font-size: 18px; font-weight: bold; color: #3a4a5c;
+}
+.fe-grandpa-back, .fe-grandpa-exit {
+  padding: 8px 14px; border-radius: 14px;
+  background: #EAF6FF; color: #5B9BD5; font-size: 14px; font-weight: bold;
+}
+.fe-grandpa-exit { background: #FFEBEE; color: #E57373; }
+.fe-grandpa-body {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 32px 20px; gap: 20px; overflow-y: auto;
+}
+.fe-grandpa-pet {
+  font-size: 120px; line-height: 1;
+  animation: feBounce 2.5s ease-in-out infinite;
+}
+.fe-grandpa-name {
+  font-size: 18px; color: #5a6a7c; font-weight: bold; margin-bottom: 12px;
+  text-align: center;
+}
+.fe-grandpa-btn {
+  width: 100%; max-width: 320px; padding: 22px;
+  border-radius: 18px; font-size: 22px; font-weight: bold; color: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.fe-grandpa-btn.feed { background: linear-gradient(135deg, #FF8A65, #FF7043); }
+.fe-grandpa-btn.pet { background: linear-gradient(135deg, #5B9BD5, #42A5F5); }
+.fe-grandpa-btn.encourage { background: linear-gradient(135deg, #66BB6A, #81C784); }
+.fe-grandpa-btn:active { transform: scale(0.97); }
+@keyframes feBounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* body.grandpa-mode 全局放大字体与按钮 */
+body.grandpa-mode { font-size: 18px; }
+body.grandpa-mode .func-btn { width: 62px; height: 62px; font-size: 26px; }
+body.grandpa-mode .func-btn small { font-size: 11px; }
+body.grandpa-mode .btn-primary,
+body.grandpa-mode .btn-cancel,
+body.grandpa-mode .btn-success,
+body.grandpa-mode .btn-warning,
+body.grandpa-mode .btn-danger,
+body.grandpa-mode .btn-info { font-size: 16px; padding: 12px 18px; }
+body.grandpa-mode .tab-label { font-size: 14px; }
+body.grandpa-mode .topbar-title { font-size: 20px; }
+body.grandpa-mode .toast { font-size: 16px; }
+body.grandpa-mode .modal-title { font-size: 20px; }
+body.grandpa-mode .modal-body { font-size: 16px; }
+body.grandpa-mode .fs-title { font-size: 20px; }
+body.grandpa-mode .info-card h3 { font-size: 18px; }
+body.grandpa-mode .info-card p { font-size: 14px; }
+body.grandpa-mode .si-label { font-size: 17px; }
+/* 简化部分动画，减少视觉干扰 */
+body.grandpa-mode .fw-cloud,
+body.grandpa-mode .ff-gacha-emoji,
+body.grandpa-mode .fw-olympics-pet,
+body.grandpa-mode .fe-cherry-tree,
+body.grandpa-mode .fe-voice-pet,
+body.grandpa-mode .fe-grandpa-pet { animation: none !important; }
+
+/* ============ 5. 家族荣誉榜 ============ */
+.fe-family-board { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.fe-member-card {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; padding: 12px 14px; border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(100,150,200,0.12);
+}
+.fe-member-card.rank-1 { background: linear-gradient(135deg, #FFF8E1, #FFECB3); box-shadow: 0 2px 10px rgba(255,193,7,0.3); }
+.fe-member-card.rank-2 { background: linear-gradient(135deg, #F5F5F5, #E0E0E0); }
+.fe-member-card.rank-3 { background: linear-gradient(135deg, #FFE0B2, #FFCC80); }
+.fe-member-rank { font-size: 28px; width: 40px; text-align: center; flex-shrink: 0; }
+.fe-member-info { flex: 1; text-align: left; }
+.fe-member-name { font-size: 15px; font-weight: bold; color: #3a4a5c; }
+.fe-member-stats { font-size: 12px; color: #6a7a8c; margin-top: 2px; }
+.fe-member-date { font-size: 11px; color: #9aa5b8; }
+
+/* ============ 6. AR相机 ============ */
+.fe-ar-container {
+  flex: 1; display: flex; flex-direction: column;
+  background: #000;
+}
+.fe-ar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: rgba(0,0,0,0.6); color: #fff;
+  flex-shrink: 0; font-size: 15px; font-weight: bold;
+}
+.fe-ar-header .fs-back { color: #fff; background: rgba(255,255,255,0.2); }
+.fe-ar-snap {
+  padding: 6px 14px; border-radius: 14px;
+  background: #FFD54F; color: #5a4500; font-weight: bold; font-size: 13px;
+}
+.fe-ar-snap:active { transform: scale(0.95); }
+.fe-ar-view {
+  flex: 1; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #2c3e70, #1a2540);
+}
+.fe-ar-view.no-camera { background: linear-gradient(135deg, #B0D4F1, #CDE9FF); }
+.fe-ar-view video {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block;
+}
+.fe-ar-fallback {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  text-align: center; color: #5a6a7c; font-size: 16px;
+  flex-direction: column; gap: 12px;
+}
+.fe-ar-overlay {
+  position: absolute; font-size: 96px; line-height: 1;
+  transform: translate(-50%, -50%); cursor: move; user-select: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+  touch-action: none;
+}
+.fe-ar-overlay:active { transform: translate(-50%, -50%) scale(1.1); }
+.fe-ar-tip {
+  padding: 10px 14px; background: rgba(0,0,0,0.7); color: #fff;
+  font-size: 13px; text-align: center; flex-shrink: 0;
+}
+.fe-ar-album {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 8px; padding: 6px; max-height: 360px; overflow-y: auto;
+}
+.fe-ar-photo {
+  background: #F5F9FC; padding: 6px; border-radius: 10px; text-align: center;
+}
+.fe-ar-photo img { width: 100%; border-radius: 6px; display: block; }
+
+/* ============ 7. 语音助手 ============ */
+.fe-voice-panel {
+  flex: 1; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #EAF6FF, #fff);
+}
+.fe-voice-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: #fff;
+  border-bottom: 1px solid #E8F0F8; flex-shrink: 0;
+  font-size: 17px; font-weight: bold; color: #3a4a5c;
+}
+.fe-voice-header .fs-back { background: #EAF6FF; color: #5B9BD5; }
+.fe-voice-body {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 24px; gap: 16px;
+}
+.fe-voice-pet {
+  font-size: 120px; line-height: 1;
+  animation: feBounce 2s ease-in-out infinite;
+}
+.fe-voice-bubble {
+  background: #fff; padding: 14px 18px; border-radius: 18px;
+  font-size: 15px; color: #3a4a5c; line-height: 1.6;
+  max-width: 320px; text-align: center;
+  box-shadow: 0 4px 12px rgba(100,150,200,0.2);
+  position: relative;
+}
+.fe-voice-bubble::before {
+  content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #fff;
+}
+.fe-voice-btns {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; padding: 14px; flex-shrink: 0;
+}
+.fe-voice-btn {
+  padding: 16px 12px; border-radius: 16px;
+  background: #5B9BD5; color: #fff; font-size: 14px; font-weight: bold;
+  box-shadow: 0 2px 8px rgba(91,155,213,0.3);
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.fe-voice-btn:active { transform: scale(0.96); }
+.fe-voice-btn:nth-child(2) { background: #66BB6A; box-shadow: 0 2px 8px rgba(102,187,106,0.3); }
+.fe-voice-btn:nth-child(3) { background: #FFD54F; color: #5a4500; }
+.fe-voice-btn:nth-child(4) { background: #FF8A65; box-shadow: 0 2px 8px rgba(255,138,101,0.3); }
+
+/* ============ 8. AI聊天 ============ */
+.fe-chat-container {
+  flex: 1; display: flex; flex-direction: column;
+  background: #EAF6FF;
+}
+.fe-chat-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: #fff;
+  border-bottom: 1px solid #E8F0F8; flex-shrink: 0;
+  font-size: 14px; font-weight: bold; color: #3a4a5c;
+}
+.fe-chat-header .fs-back { background: #EAF6FF; color: #5B9BD5; }
+.fe-chat-clear {
+  background: #FFEBEE; color: #E57373;
+  padding: 6px 10px; border-radius: 12px; font-size: 14px;
+}
+.fe-chat-clear:active { transform: scale(0.94); }
+.fe-chat-messages {
+  flex: 1; overflow-y: auto; padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.fe-chat-msg { display: flex; align-items: flex-end; gap: 6px; max-width: 100%; }
+.fe-chat-msg.pet { justify-content: flex-start; }
+.fe-chat-msg.user { justify-content: flex-end; }
+.fe-chat-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(100,150,200,0.2);
+}
+.fe-chat-bubble {
+  padding: 10px 14px; border-radius: 14px;
+  font-size: 14px; line-height: 1.5; max-width: 75%;
+  word-break: break-word;
+}
+.fe-chat-msg.pet .fe-chat-bubble {
+  background: #fff; color: #3a4a5c;
+  border-bottom-left-radius: 4px;
+}
+.fe-chat-msg.user .fe-chat-bubble {
+  background: #5B9BD5; color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.fe-chat-input {
+  display: flex; gap: 8px; padding: 10px;
+  background: #fff; border-top: 1px solid #E8F0F8; flex-shrink: 0;
+}
+.fe-chat-input input {
+  flex: 1; padding: 10px 14px; border: 2px solid #D4ECFC;
+  border-radius: 14px; font-size: 14px; font-family: inherit; color: #3a4a5c;
+}
+.fe-chat-input input:focus { outline: none; border-color: #5B9BD5; }
+.fe-chat-input button {
+  padding: 10px 18px; border-radius: 14px;
+  background: #5B9BD5; color: #fff; font-weight: bold; font-size: 14px;
+  flex-shrink: 0;
+}
+.fe-chat-input button:active { transform: scale(0.95); }

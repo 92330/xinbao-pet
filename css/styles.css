@@ -1208,3 +1208,35 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; colo
   color:#8aa5b8;
 }
 
+/* ============ 更多页面 ============ */
+.more-content { padding:12px; }
+.more-grid {
+  display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
+}
+.more-card {
+  background:#fff; border-radius:16px; padding:16px 12px; text-align:center;
+  cursor:pointer; position:relative; transition:all 0.2s;
+  box-shadow:0 2px 8px rgba(100,150,200,0.15);
+}
+.more-card:active { transform:scale(0.96); }
+.more-card-active {
+  background:linear-gradient(135deg,#FFFDE7,#FFF8E1);
+  border:2px solid #FFD54F;
+}
+.more-card-icon {
+  font-size:36px; margin-bottom:8px; position:relative;
+}
+.more-card-name {
+  font-size:14px; font-weight:bold; color:#3a4a5c; margin-bottom:4px;
+}
+.more-card-desc {
+  font-size:11px; color:#8aa5b8; line-height:1.4;
+}
+.more-badge {
+  position:absolute; top:-4px; right:-4px;
+  background:#F44336; color:#fff; font-size:10px; font-weight:bold;
+  width:18px; height:18px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 1px 4px rgba(244,67,54,0.4);
+}
+
