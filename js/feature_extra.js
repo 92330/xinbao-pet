@@ -104,7 +104,7 @@
 
     if (!fe.voiceAssistant) fe.voiceAssistant = { used: 0, lastUse: '' };
 
-    if (!fe.aiChat) fe.aiChat = { messages: [], dailyCount: 0, dailyDate: '', apiConfig: { url: 'https://api.deepseek.com/v1/chat/completions', key: '', model: 'deepseek-chat' } };
+    if (!fe.aiChat) fe.aiChat = { messages: [], dailyCount: 0, dailyDate: '', apiConfig: { url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', key: '', model: 'glm-4-flash' } };
     if (!Array.isArray(fe.aiChat.messages)) fe.aiChat.messages = [];
 
     Storage.save();
@@ -991,14 +991,18 @@
         '<div style="padding:10px;font-size:13px;line-height:1.8;color:#5a6a7c">' +
           '<div style="text-align:center;font-size:42px;margin-bottom:6px">🤖</div>' +
           '<p style="margin-bottom:8px">小朋友你好！现在宠物是<b style="color:#FF9800">本地模式</b>，只能听懂简单的话，复杂问题会答非所问。</p>' +
-          '<p style="margin-bottom:8px">配置 <b>DeepSeek AI</b> 后，宠物就能像真正的小学霸一样：</p>' +
-          '<div style="background:#E8F0F8;padding:8px 10px;border-radius:8px;font-size:12px;margin-bottom:8px">' +
+          '<p style="margin-bottom:8px">配置 <b style="color:#4CAF50">智谱 glm-4-flash（永久免费）</b> 后，宠物就能像真正的小学霸一样：</p>' +
+          '<div style="background:#E8F5E9;padding:8px 10px;border-radius:8px;font-size:12px;margin-bottom:8px;color:#2E7D32">' +
             '✅ 接住你说的每一句话，不答非所问<br>' +
             '✅ 回答十万个为什么（科学/历史/自然…）<br>' +
             '✅ 讲故事、陪聊心情、辅导学习<br>' +
-            '✅ 记得刚才聊过什么，连贯对话' +
+            '✅ 记得刚才聊过什么，连贯对话<br>' +
+            '✅ <b>完全免费，不用花一分钱</b>' +
           '</div>' +
-          '<p style="font-size:12px;color:#8aa5b8">需要家长帮忙，去 platform.deepseek.com 注册后，在「API Keys」页面创建一个密钥（免费额度够用很久啦）。</p>' +
+          '<p style="font-size:12px;color:#8aa5b8">需要家长帮忙哦：<br>' +
+          '1. 打开 open.bigmodel.cn 注册 → 实名认证<br>' +
+          '2. 点左侧「API Keys」→ 新建密钥 → 复制<br>' +
+          '3. 点下面的「立即配置」→ 粘贴密钥 → 保存</p>' +
         '</div>',
         '<button class="btn-cancel" onclick="closeModal();FEopenAIChat();">先用本地模式</button>' +
         '<button class="btn-primary" onclick="closeModal();FEopenAIConfig();">⚙️ 立即配置AI</button>');
@@ -1239,7 +1243,7 @@
 
     // 5. 问句但本地答不了 → 诚实引导配置 AI，不答非所问
     if (isQuestion) {
-      return '这个问题好棒！本地模式下我还答不好，点右上角 ⚙️ 配置 DeepSeek AI，我就能像学霸一样回答你啦~';
+      return '这个问题好棒！本地模式下我还答不好，点右上角 ⚙️ 配置智谱免费AI，我就能像学霸一样回答你啦~';
     }
 
     // 6. 普通陈述句：简单回应 + 引导
@@ -1257,34 +1261,76 @@
     var cfg = ac.apiConfig || {};
     showModal('⚙️ AI对话设置',
       '<div style="padding:10px;font-size:13px;line-height:1.8;color:#5a6a7c">' +
-      '<p style="margin-bottom:8px">配置AI API后，宠物对话将像DeepSeek一样智能，能接住每一句话！</p>' +
+      '<p style="margin-bottom:8px">配置后，宠物对话就智能啦，接住每一句话不答非所问！</p>' +
+
+      // 预设按钮（最关键：让用户不用记URL和模型名）
+      '<div style="margin-bottom:14px">' +
+      '<label style="display:block;font-weight:bold;margin-bottom:6px">👉 一键选平台（点下面的按钮自动填好地址和模型）</label>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      '<button onclick="FEsetPreset(\'glm\')" style="flex:1;padding:8px 4px;background:linear-gradient(135deg,#4CAF50,#81C784);color:#fff;border-radius:8px;font-size:12px;font-weight:bold">🆓 智谱glm-4-flash<br><span style="font-size:10px;opacity:0.8">永久免费</span></button>' +
+      '<button onclick="FEsetPreset(\'qwen\')" style="flex:1;padding:8px 4px;background:linear-gradient(135deg,#5B9BD5,#90CAF9);color:#fff;border-radius:8px;font-size:12px;font-weight:bold">🆓 硅基Qwen7B<br><span style="font-size:10px;opacity:0.8">送14元额度</span></button>' +
+      '<button onclick="FEsetPreset(\'deepseek\')" style="flex:1;padding:8px 4px;background:linear-gradient(135deg,#FF8A65,#FFB088);color:#fff;border-radius:8px;font-size:12px;font-weight:bold">💠 DeepSeek<br><span style="font-size:10px;opacity:0.8">最智能</span></button>' +
+      '</div>' +
+      '</div>' +
+
       '<div style="margin-bottom:10px">' +
       '<label style="display:block;font-weight:bold;margin-bottom:4px">API地址</label>' +
-      '<input id="feApiUrl" type="text" value="' + escapeHTML(cfg.url || 'https://api.deepseek.com/v1/chat/completions') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="https://api.deepseek.com/v1/chat/completions">' +
+      '<input id="feApiUrl" type="text" value="' + escapeHTML(cfg.url || 'https://open.bigmodel.cn/api/paas/v4/chat/completions') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="https://...">' +
       '</div>' +
       '<div style="margin-bottom:10px">' +
-      '<label style="display:block;font-weight:bold;margin-bottom:4px">API密钥</label>' +
-      '<input id="feApiKey" type="password" value="' + escapeHTML(cfg.key || '') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="sk-xxxxxxxxxxxx">' +
-      '<small style="color:#8aa5b8">DeepSeek密钥：platform.deepseek.com → API Keys</small>' +
+      '<label style="display:block;font-weight:bold;margin-bottom:4px">API密钥 ⭐（必填）</label>' +
+      '<input id="feApiKey" type="text" value="' + escapeHTML(cfg.key || '') + '" style="width:100%;padding:8px;border:1px solid #FF8A65;border-radius:8px;font-size:13px;background:#FFF8F4" placeholder="粘贴你的密钥，以sk-或字母开头">' +
+      '<small style="color:#8aa5b8">选了上面的平台后，去对应平台的「API Keys」页面复制密钥粘这里</small>' +
       '</div>' +
       '<div style="margin-bottom:10px">' +
       '<label style="display:block;font-weight:bold;margin-bottom:4px">模型名称</label>' +
-      '<input id="feApiModel" type="text" value="' + escapeHTML(cfg.model || 'deepseek-chat') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="deepseek-chat">' +
+      '<input id="feApiModel" type="text" value="' + escapeHTML(cfg.model || 'glm-4-flash') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="glm-4-flash">' +
       '</div>' +
+
+      // 智谱指引（默认推荐）
+      '<div style="background:#E8F5E9;padding:10px 12px;border-radius:8px;font-size:12px;color:#2E7D32;margin-top:6px;line-height:1.7">' +
+      '<b>推荐先用智谱（完全免费）：</b><br>' +
+      '1. 打开 open.bigmodel.cn 注册 → 实名认证<br>' +
+      '2. 左侧「API Keys」→ 新建密钥 → 复制<br>' +
+      '3. 粘到上面「API密钥」框 → 保存<br>' +
+      '模型 glm-4-flash 永久免费，不用花一分钱~' +
+      '</div>' +
+
       '<div style="background:#E8F0F8;padding:8px 10px;border-radius:8px;font-size:12px;color:#5a6a7c;margin-top:8px">' +
-      '💡 不配置也能聊天（本地模式），但配置后对话更智能、更自然、不答非所问。' +
+      '💡 不填密钥也能聊天（本地模式），但复杂问题会答不上来。' +
       '</div>' +
       '</div>',
       '<button class="btn-cancel" onclick="closeModal()">取消</button>' +
-      '<button class="btn-primary" onclick="FEdoSaveAIConfig()">保存</button>');
+      '<button class="btn-primary" onclick="FEdoSaveAIConfig()">✅ 保存配置</button>');
   }
+
+  // 预设平台：一键填 URL + 模型
+  window.FEsetPreset = function (name) {
+    var urlEl = document.getElementById('feApiUrl');
+    var modelEl = document.getElementById('feApiModel');
+    var keyEl = document.getElementById('feApiKey');
+    if (!urlEl || !modelEl) return;
+    if (name === 'glm') {
+      urlEl.value = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+      modelEl.value = 'glm-4-flash';
+      if (keyEl) keyEl.placeholder = '去 open.bigmodel.cn → API Keys 复制，字母/数字串';
+    } else if (name === 'qwen') {
+      urlEl.value = 'https://api.siliconflow.cn/v1/chat/completions';
+      modelEl.value = 'Qwen/Qwen2.5-7B-Instruct';
+      if (keyEl) keyEl.placeholder = '去 cloud.siliconflow.cn → API 密钥 复制（sk-开头）';
+    } else if (name === 'deepseek') {
+      urlEl.value = 'https://api.deepseek.com/v1/chat/completions';
+      modelEl.value = 'deepseek-chat';
+      if (keyEl) keyEl.placeholder = '去 platform.deepseek.com → API Keys 复制（sk-开头）';
+    }
+  };
 
   function FEdoSaveAIConfig() {
     var ac = S.featureExtra.aiChat;
     if (!ac.apiConfig) ac.apiConfig = {};
-    ac.apiConfig.url = (document.getElementById('feApiUrl').value || '').trim() || 'https://api.deepseek.com/v1/chat/completions';
+    ac.apiConfig.url = (document.getElementById('feApiUrl').value || '').trim() || 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
     ac.apiConfig.key = (document.getElementById('feApiKey').value || '').trim();
-    ac.apiConfig.model = (document.getElementById('feApiModel').value || '').trim() || 'deepseek-chat';
+    ac.apiConfig.model = (document.getElementById('feApiModel').value || '').trim() || 'glm-4-flash';
     saveFE();
     closeModal();
     toast(ac.apiConfig.key ? '🟢 AI已连接！对话将更智能' : '已切换为本地模式');
