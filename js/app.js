@@ -3910,7 +3910,7 @@ function endRaceGame(early) {
       </div>
     </div>
     <div style="padding:12px;display:flex;gap:8px">
-      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-cancel" style="flex:1" onclick="closeFullscreen();switchPage('game')">返回中心</button>
       <button class="btn-primary" style="flex:1" onclick="closeFullscreen();startRaceGame()">再来一局</button>
     </div>
   `);
@@ -4085,7 +4085,7 @@ function endPaintGame() {
       </div>
     </div>
     <div style="padding:12px;display:flex;gap:8px">
-      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-cancel" style="flex:1" onclick="closeFullscreen();switchPage('game')">返回中心</button>
       <button class="btn-primary" style="flex:1" onclick="closeFullscreen();startPaintGame()">再画一局</button>
     </div>
   `);
@@ -4253,7 +4253,7 @@ function endMemoryGame(quit) {
       </div>
     </div>
     <div style="padding:12px;display:flex;gap:8px">
-      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-cancel" style="flex:1" onclick="closeFullscreen();switchPage('game')">返回中心</button>
       ${!cleared ? '<button class="btn-primary" style="flex:1" onclick="closeFullscreen();startMemoryGame()">再来一局</button>' :
         '<button class="btn-primary" style="flex:1" onclick="switchPage(\'shop\')">去商店逛逛</button>'}
     </div>
@@ -4485,7 +4485,7 @@ function endRhythmGame(quit) {
       </div>
     </div>
     <div style="padding:12px;display:flex;gap:8px">
-      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-cancel" style="flex:1" onclick="closeFullscreen();switchPage('game')">返回中心</button>
       <button class="btn-primary" style="flex:1" onclick="closeFullscreen();startRhythmGame()">再来一局</button>
     </div>
   `);
