@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#B0D4F1">
+  <title>欣宝小宠</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- ============ App容器 ============ -->
+  <div id="app">
+    <!-- 顶部栏 -->
+    <header id="topbar">
+      <div class="coin-box"><span class="coin-icon">🪙</span><span id="coinNum">0</span></div>
+      <div class="topbar-title">欣宝小宠</div>
+      <div class="topbar-right">
+        <button id="signBtn" class="icon-btn" title="签到">📅</button>
+        <button id="settingsBtn" class="icon-btn" title="设置">⚙️</button>
+      </div>
+    </header>
+
+    <!-- 主内容区（4个页面切换） -->
+    <main id="content">
+      <!-- ===== 主页 ===== -->
+      <section id="page-home" class="page active">
+        <div id="homeScene" class="home-scene">
+          <!-- 家园背景：已放置家具网格 -->
+          <div id="furnitureLayer" class="furniture-layer"></div>
+          <!-- 宠物展示区 -->
+          <div id="petDisplay" class="pet-display"></div>
+          <!-- 悄悄话气泡 -->
+          <div id="petTalk" class="pet-talk hidden"></div>
+          <!-- 右下角功能按钮 -->
+          <div class="home-func">
+            <button id="btnMap" class="func-btn">📍<br><small>地图</small></button>
+            <button id="btnDecorate" class="func-btn">🏠<br><small>布置</small></button>
+            <button id="btnCamera" class="func-btn">📷<br><small>拍照</small></button>
+            <button id="btnMiniGame" class="func-btn">🎮<br><small>游戏</small></button>
+          </div>
+          <!-- 多宠切换 -->
+          <div id="petSwitcher" class="pet-switcher"></div>
+        </div>
+        <!-- 状态条 + 互动按钮 -->
+        <div class="home-bottom">
+          <div id="petStatus" class="pet-status"></div>
+          <div id="interactionRow" class="interaction-row"></div>
+          <button id="btnPlayAll" class="play-all-btn">🎾 一起玩 (-20金)</button>
+        </div>
+      </section>
+
+      <!-- ===== 任务页 ===== -->
+      <section id="page-task" class="page">
+        <div class="page-header">
+          <h2>📝 今日任务</h2>
+          <button id="btnAnswer" class="header-btn">📝答题</button>
+        </div>
+        <div id="fortuneBox" class="fortune-box"></div>
+        <div id="taskList" class="task-list"></div>
+        <button id="btnAddTask" class="add-btn">+ 添加任务</button>
+      </section>
+
+      <!-- ===== 商店页 ===== -->
+      <section id="page-shop" class="page">
+        <div class="page-header">
+          <h2>🛒 商店</h2>
+          <div id="todaySale" class="today-sale"></div>
+        </div>
+        <div id="shopTabs" class="shop-tabs">
+          <button data-cat="food" class="shop-tab active">🍖食物</button>
+          <button data-cat="accessory" class="shop-tab">🎀饰品</button>
+          <button data-cat="furniture" class="shop-tab">🪑家具</button>
+          <button data-cat="pet" class="shop-tab">🐾宠物</button>
+          <button data-cat="map" class="shop-tab">🗺️地图</button>
+          <button data-cat="package" class="shop-tab">🎁礼包</button>
+        </div>
+        <div id="shopList" class="shop-list"></div>
+      </section>
+
+      <!-- ===== 相册页 ===== -->
+      <section id="page-album" class="page">
+        <div id="albumTabs" class="album-tabs">
+          <button data-tab="photo" class="album-tab active">📷时光相册</button>
+          <button data-tab="diary" class="album-tab">📖宠物日记</button>
+          <button data-tab="bag" class="album-tab">🎒背包</button>
+        </div>
+        <div id="albumContent" class="album-content"></div>
+      </section>
+    </main>
+
+    <!-- 底部Tab栏 -->
+    <nav id="tabbar">
+      <button data-page="home" class="tab active"><span class="tab-icon">🏠</span><span class="tab-label">主页</span></button>
+      <button data-page="task" class="tab"><span class="tab-icon">📝</span><span class="tab-label">任务</span></button>
+      <button data-page="shop" class="tab"><span class="tab-icon">🛒</span><span class="tab-label">商店</span></button>
+      <button data-page="album" class="tab"><span class="tab-icon">📷</span><span class="tab-label">相册</span></button>
+    </nav>
+  </div>
+
+  <!-- ============ 通用弹窗 ============ -->
+  <div id="modalMask" class="modal-mask hidden">
+    <div id="modalBox" class="modal-box">
+      <div id="modalTitle" class="modal-title"></div>
+      <div id="modalBody" class="modal-body"></div>
+      <div id="modalFooter" class="modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- ============ 浮动提示 ============ -->
+  <div id="toast" class="toast hidden"></div>
+  <div id="floatRewards" class="float-rewards"></div>
+
+  <!-- ============ 全屏覆盖层（地图/布置/小游戏/详情） ============ -->
+  <div id="fullscreen" class="fullscreen hidden"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
