@@ -104,7 +104,7 @@
 
     if (!fe.voiceAssistant) fe.voiceAssistant = { used: 0, lastUse: '' };
 
-    if (!fe.aiChat) fe.aiChat = { messages: [], dailyCount: 0, dailyDate: '' };
+    if (!fe.aiChat) fe.aiChat = { messages: [], dailyCount: 0, dailyDate: '', apiConfig: { url: 'https://api.deepseek.com/v1/chat/completions', key: '', model: 'deepseek-chat' } };
     if (!Array.isArray(fe.aiChat.messages)) fe.aiChat.messages = [];
 
     Storage.save();
@@ -992,7 +992,8 @@
     var petName = pet ? pet.name : '小宠';
     var msgsHTML;
     if (ac.messages.length === 0) {
-      msgsHTML = '<div style="text-align:center;color:#8aa5b8;padding:20px;font-size:13px">和 ' + escapeHTML(petName) + ' 聊聊天吧~<br>已聊 ' + ac.dailyCount + ' 次（每次+1亲密）</div>';
+      var aiStatus = ac.apiConfig && ac.apiConfig.key ? '<span style="color:#4CAF50">🟢 AI已连接</span>' : '<span style="color:#FF9800">🟡 本地模式（点⚙️配置AI更智能）</span>';
+      msgsHTML = '<div style="text-align:center;color:#8aa5b8;padding:20px;font-size:13px">和 ' + escapeHTML(petName) + ' 聊聊天吧~<br>已聊 ' + ac.dailyCount + ' 次（每次+1亲密）<br>' + aiStatus + '</div>';
     } else {
       msgsHTML = ac.messages.map(function (m) {
         if (m.role === 'user') {
@@ -1006,7 +1007,8 @@
       '<div class="fe-chat-container">' +
         '<div class="fe-chat-header">' +
           '<button class="fs-back" onclick="closeFullscreen()">← 返回</button>' +
-          '<span>' + def.emoji + ' 和' + escapeHTML(petName) + '聊天 (已聊' + ac.dailyCount + '次)</span>' +
+          '<span>' + def.emoji + ' 和' + escapeHTML(petName) + '聊天</span>' +
+          '<button class="fe-chat-clear" onclick="FEopenAIConfig()" style="font-size:16px">⚙️</button>' +
           '<button class="fe-chat-clear" onclick="FEclearChat()">🗑️</button>' +
         '</div>' +
         '<div class="fe-chat-messages" id="feChatMessages">' + msgsHTML + '</div>' +
@@ -1033,18 +1035,86 @@
     var inp = document.getElementById('feChatInput');
     var text = inp ? (inp.value || '').trim() : '';
     if (!text) return;
+    inp.value = '';
     var ac = S.featureExtra.aiChat;
     ac.messages.push({ role: 'user', text: text, time: Date.now() });
-    var pet = getActivePet();
-    var name = pet ? pet.name : '小宠';
-    var reply = FEgetAIReply(text, name);
-    ac.messages.push({ role: 'pet', text: reply, time: Date.now() });
     // 亲密度+1，不限次数
     addIntimacy(1);
     ac.dailyCount += 1;
     saveFE();
-    try { Sound.play('click'); } catch (e) {}
     FErenderChat();
+    // 显示"正在思考..."并异步获取回复
+    var pet = getActivePet();
+    var name = pet ? pet.name : '小宠';
+    var def = pet ? (D.PET_DEFS[pet.defId] || {}) : {};
+    var emoji = def.emoji || '🐶';
+    var msgBox = document.getElementById('feChatMessages');
+    if (msgBox) {
+      var thinkDiv = document.createElement('div');
+      thinkDiv.id = 'feChatThinking';
+      thinkDiv.className = 'fe-chat-msg pet';
+      thinkDiv.innerHTML = '<div class="fe-chat-avatar">' + emoji + '</div><div class="fe-chat-bubble fe-chat-thinking"><span class="fe-dot">●</span><span class="fe-dot">●</span><span class="fe-dot">●</span></div>';
+      msgBox.appendChild(thinkDiv);
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+    // 异步获取AI回复
+    FEfetchAIReply(text, name).then(function (reply) {
+      var t = document.getElementById('feChatThinking');
+      if (t) t.remove();
+      ac.messages.push({ role: 'pet', text: reply, time: Date.now() });
+      saveFE();
+      try { Sound.play('click'); } catch (e) {}
+      FErenderChat();
+    }).catch(function () {
+      var t = document.getElementById('feChatThinking');
+      if (t) t.remove();
+      var reply = FEgetAIReply(text, name);
+      ac.messages.push({ role: 'pet', text: reply, time: Date.now() });
+      saveFE();
+      FErenderChat();
+    });
+  }
+
+  // 调用真实AI API（DeepSeek / OpenAI 兼容格式）
+  function FEfetchAIReply(userText, petName) {
+    var ac = S.featureExtra.aiChat;
+    var cfg = ac.apiConfig || {};
+    if (!cfg.key) return Promise.reject(new Error('no api key'));
+    // 构建上下文消息（最近10轮）
+    var pet = getActivePet();
+    var def = pet ? (D.PET_DEFS[pet.defId] || {}) : {};
+    var emoji = def.emoji || '🐶';
+    var sysContent = '你是一只可爱的虚拟宠物' + petName + '（' + emoji + '），正在和一个8岁的小朋友聊天。' +
+      '你的性格活泼、温暖、充满好奇心。请用简短、亲切、口语化的中文回复（50字以内）。' +
+      '回复要自然地接住小朋友说的每一句话，不答非所问。可以聊任何话题：学习、生活、科学、故事、情感等。' +
+      '如果小朋友问知识性问题，请用简单易懂的方式解答。如果小朋友分享心情，请先共情再回应。';
+    var msgs = [{ role: 'system', content: sysContent }];
+    var recent = ac.messages.slice(-20);
+    for (var i = 0; i < recent.length; i++) {
+      msgs.push({ role: recent[i].role === 'pet' ? 'assistant' : 'user', content: recent[i].text });
+    }
+    msgs.push({ role: 'user', content: userText });
+    return fetch(cfg.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + cfg.key
+      },
+      body: JSON.stringify({
+        model: cfg.model || 'deepseek-chat',
+        messages: msgs,
+        max_tokens: 200,
+        temperature: 0.8,
+        stream: false
+      })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('API error ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      var reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (!reply) throw new Error('empty response');
+      return reply.trim();
+    });
   }
 
   function FEgetAIReply(text, name) {
@@ -1092,6 +1162,47 @@
     return GENERIC_REPLIES[Math.floor(Math.random() * GENERIC_REPLIES.length)];
   }
 
+  // AI配置弹窗
+  function FEopenAIConfig() {
+    var ac = S.featureExtra.aiChat;
+    var cfg = ac.apiConfig || {};
+    showModal('⚙️ AI对话设置',
+      '<div style="padding:10px;font-size:13px;line-height:1.8;color:#5a6a7c">' +
+      '<p style="margin-bottom:8px">配置AI API后，宠物对话将像DeepSeek一样智能，能接住每一句话！</p>' +
+      '<div style="margin-bottom:10px">' +
+      '<label style="display:block;font-weight:bold;margin-bottom:4px">API地址</label>' +
+      '<input id="feApiUrl" type="text" value="' + escapeHTML(cfg.url || 'https://api.deepseek.com/v1/chat/completions') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="https://api.deepseek.com/v1/chat/completions">' +
+      '</div>' +
+      '<div style="margin-bottom:10px">' +
+      '<label style="display:block;font-weight:bold;margin-bottom:4px">API密钥</label>' +
+      '<input id="feApiKey" type="password" value="' + escapeHTML(cfg.key || '') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="sk-xxxxxxxxxxxx">' +
+      '<small style="color:#8aa5b8">DeepSeek密钥：platform.deepseek.com → API Keys</small>' +
+      '</div>' +
+      '<div style="margin-bottom:10px">' +
+      '<label style="display:block;font-weight:bold;margin-bottom:4px">模型名称</label>' +
+      '<input id="feApiModel" type="text" value="' + escapeHTML(cfg.model || 'deepseek-chat') + '" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;font-size:13px" placeholder="deepseek-chat">' +
+      '</div>' +
+      '<div style="background:#E8F0F8;padding:8px 10px;border-radius:8px;font-size:12px;color:#5a6a7c;margin-top:8px">' +
+      '💡 不配置也能聊天（本地模式），但配置后对话更智能、更自然、不答非所问。' +
+      '</div>' +
+      '</div>',
+      '<button class="btn-cancel" onclick="closeModal()">取消</button>' +
+      '<button class="btn-primary" onclick="FEdoSaveAIConfig()">保存</button>');
+  }
+
+  function FEdoSaveAIConfig() {
+    var ac = S.featureExtra.aiChat;
+    if (!ac.apiConfig) ac.apiConfig = {};
+    ac.apiConfig.url = (document.getElementById('feApiUrl').value || '').trim() || 'https://api.deepseek.com/v1/chat/completions';
+    ac.apiConfig.key = (document.getElementById('feApiKey').value || '').trim();
+    ac.apiConfig.model = (document.getElementById('feApiModel').value || '').trim() || 'deepseek-chat';
+    saveFE();
+    closeModal();
+    toast(ac.apiConfig.key ? '🟢 AI已连接！对话将更智能' : '已切换为本地模式');
+    try { Sound.play('success'); } catch (e) {}
+    FErenderChat();
+  }
+
   function FEclearChat() {
     showModal('清空聊天',
       '<div style="text-align:center;padding:14px;font-size:14px;color:#5a6a7c">确定清空所有聊天记录吗？</div>',
@@ -1110,7 +1221,7 @@
 
   // ============ DOM 注入汇总 ============
   function injectAllHome() {
-    injectCherryTree();
+    // 樱花树由 feature_world.js 负责，此处不再重复注入
     injectFarewellBtn();
     injectARCameraBtn();
     injectVoiceBtn();
@@ -1132,7 +1243,6 @@
   function startHomeWatchdog() {
     setInterval(function () {
       injectAllHome();
-      updateCherryTree();
     }, 1500);
   }
 
@@ -1146,7 +1256,6 @@
     }
     injectAllHome();
     injectHourglassShopCard();
-    updateCherryTree();
     if (!_feInited) {
       _feInited = true;
       startSettingsWatchdog();
@@ -1190,6 +1299,8 @@
   window.FEsendChat = FEsendChat;
   window.FEclearChat = FEclearChat;
   window.FEdoClearChat = FEdoClearChat;
+  window.FEopenAIConfig = FEopenAIConfig;
+  window.FEdoSaveAIConfig = FEdoSaveAIConfig;
 
   // ============ 自动初始化：轮询 S 就绪后调用 ============
   function autoInit() {
