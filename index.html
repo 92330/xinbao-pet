@@ -13,7 +13,7 @@
   <div id="app">
     <!-- 顶部栏 -->
     <header id="topbar">
-      <div class="coin-box"><span class="coin-icon">🪙</span><span id="coinNum">0</span></div>
+      <div class="coin-box"><span class="coin-icon">🪙</span><span id="coinNum">0</span> <span id="userTitle" style="font-size:11px;color:#5B9BD5;margin-left:4px"></span></div>
       <div class="topbar-title">欣宝小宠</div>
       <div class="topbar-right">
         <button id="signBtn" class="icon-btn" title="签到">📅</button>
@@ -26,18 +26,25 @@
       <!-- ===== 主页 ===== -->
       <section id="page-home" class="page active">
         <div id="homeScene" class="home-scene">
+          <!-- 天气特效层 -->
+          <div id="weatherFx" class="weather-fx"></div>
           <!-- 家园背景：已放置家具网格 -->
           <div id="furnitureLayer" class="furniture-layer"></div>
           <!-- 宠物展示区 -->
           <div id="petDisplay" class="pet-display"></div>
           <!-- 悄悄话气泡 -->
           <div id="petTalk" class="pet-talk hidden"></div>
+          <!-- 天气栏（左上） -->
+          <div id="weatherBar" class="weather-bar" style="position:absolute;top:8px;left:8px;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.7);padding:4px 8px;border-radius:12px;z-index:5"></div>
+          <!-- 旅行者按钮 -->
+          <button id="travelerBtn" class="traveler-btn" onclick="showTraveler()" style="display:none;position:absolute;top:50%;right:10px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:50px;height:50px;align-items:center;justify-content:center;cursor:pointer;z-index:5;box-shadow:0 2px 8px rgba(100,150,200,0.3)"></button>
           <!-- 右下角功能按钮 -->
           <div class="home-func">
             <button id="btnMap" class="func-btn">📍<br><small>地图</small></button>
             <button id="btnDecorate" class="func-btn">🏠<br><small>布置</small></button>
             <button id="btnCamera" class="func-btn">📷<br><small>拍照</small></button>
             <button id="btnMiniGame" class="func-btn">🎮<br><small>游戏</small></button>
+            <button id="btnBadges" class="func-btn">🏅<br><small>徽章</small></button>
           </div>
           <!-- 多宠切换 -->
           <div id="petSwitcher" class="pet-switcher"></div>
@@ -88,6 +95,8 @@
           <button data-tab="photo" class="album-tab active">📷时光相册</button>
           <button data-tab="diary" class="album-tab">📖宠物日记</button>
           <button data-tab="bag" class="album-tab">🎒背包</button>
+          <button data-tab="draw" class="album-tab">🎨悄悄画</button>
+          <button data-tab="letter" class="album-tab">✉️信件</button>
         </div>
         <div id="albumContent" class="album-content"></div>
       </section>

@@ -62,6 +62,15 @@ function addCoin(n) {
   $('#coinNum').textContent = S.coin;
   Storage.save();
 }
+// 增加当前宠物的亲密度
+function addIntimacy(n) {
+  const pet = getActivePet();
+  if (!pet) return;
+  pet.intimacy = Math.min(1000, pet.intimacy + n);
+  pet.mood = Math.min(100, pet.mood + Math.floor(n/2));
+  gainExp(pet, n);
+  Storage.save();
+}
 function spendCoin(n) {
   if (S.coin < n) { toast('金币不足~'); Sound.play('error'); return false; }
   S.coin -= n;
@@ -302,12 +311,45 @@ function decayPets() {
 
 // ============ 主页渲染 ============
 function renderHome() {
+  updateWeather();
   renderPetDisplay();
   renderPetStatus();
   renderInteractions();
   renderPetSwitcher();
   renderFurnitureLayer();
+  renderWeatherAndTraveler();
   checkAchievements();
+  checkBadges();
+  checkNewReplies();
+}
+
+// 渲染天气效果和旅行者图标
+function renderWeatherAndTraveler() {
+  const w = getWeatherInfo();
+  const weatherBar = $('#weatherBar');
+  if (weatherBar) {
+    weatherBar.innerHTML = `<span style="font-size:18px">${w.emoji}</span><span style="font-size:12px;color:#5a6a7c">${w.name}</span>`;
+  }
+  const fxLayer = $('#weatherFx');
+  if (fxLayer) {
+    fxLayer.innerHTML = renderWeatherEffect();
+  }
+  // 旅行者图标
+  const travelerBtn = $('#travelerBtn');
+  if (travelerBtn) {
+    if (S.travelers.current) {
+      travelerBtn.style.display = 'flex';
+      travelerBtn.innerHTML = `<span style="font-size:24px;animation:bounce 1s infinite">${S.travelers.current.emoji}</span>`;
+    } else {
+      travelerBtn.style.display = 'none';
+    }
+  }
+  // 称号显示
+  const titleEl = $('#userTitle');
+  if (titleEl) {
+    const tn = getCurrentTitleName();
+    titleEl.textContent = tn ? '【'+tn+'】' : '';
+  }
 }
 
 // 渲染宠物展示（图层叠加）
@@ -644,10 +686,45 @@ function openPetDetail() {
           <button class="btn-warning" style="flex:1" onclick="renamePet()">✏️ 改名 (50金)</button>
           <button class="btn-primary" style="flex:1" onclick="takePhoto()">📷 拍照</button>
         </div>
+        <button class="btn-info" style="width:100%;margin-top:8px;padding:12px;border-radius:12px" onclick="writeLetter()">✉️ 给${pet.name}写信</button>
         ${pet.house==='livingroom' && S.pets.length>1 ? `<button class="btn-success" style="width:100%;margin-top:8px;padding:12px;border-radius:12px" onclick="buyStable()">🏠 购买独立小窝 (500金)</button>`:''}
+        ${renderLetterGallery(pet)}
+        ${renderDrawingGallery(pet)}
       </div>
     </div>
   `);
+}
+
+// 渲染信件画廊
+function renderLetterGallery(pet) {
+  const letters = S.letters.filter(l=>l.petId===pet.id).slice(-3).reverse();
+  if (!letters.length) return '';
+  let html = '<div class="detail-section"><h3>✉️ 与'+pet.name+'的信件</h3><div class="letter-list">';
+  letters.forEach(l => {
+    const hasReply = l.reply;
+    const replyReady = hasReply && Date.now() >= l.replyTime;
+    html += `<div class="letter-card ${replyReady?'replied':'waiting'}" onclick="openLetter('${l.id}')">
+      <div style="font-size:11px;color:#8aa5b8">${formatTime(l.time)}</div>
+      <div style="font-size:13px;color:#3a4a5c;margin:4px 0">${l.content.length>20?l.content.slice(0,20)+'...':l.content}</div>
+      ${replyReady ? `<div style="font-size:12px;color:#66BB6A">💌 ${l.reply.slice(0,15)}...</div>` : '<div style="font-size:12px;color:#FFA726">⏳ 等待回信中...</div>'}
+    </div>`;
+  });
+  html += '</div></div>';
+  return html;
+}
+
+// 渲染画作画廊
+function renderDrawingGallery(pet) {
+  const drawings = S.drawings.filter(d=>d.petId===pet.id).slice(-3).reverse();
+  if (!drawings.length) return '';
+  let html = '<div class="detail-section"><h3>🎨 给'+pet.name+'的画</h3><div class="drawing-gallery-grid">';
+  drawings.forEach(d => {
+    html += `<div class="drawing-thumb" onclick="viewDrawing('${d.id}')">
+      <img src="${d.dataURL}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+    </div>`;
+  });
+  html += '</div></div>';
+  return html;
 }
 
 // 卸下饰品
@@ -1299,7 +1376,59 @@ function renderAlbumContent() {
     c.innerHTML = html;
   } else if (albumTab==='bag') {
     renderBag(c);
+  } else if (albumTab==='draw') {
+    renderAlbumDrawTab(c);
+  } else if (albumTab==='letter') {
+    renderAlbumLetterTab(c);
   }
+}
+
+// 相册页 - 悄悄画 Tab
+function renderAlbumDrawTab(c) {
+  const pet = getActivePet();
+  let html = `<button class="add-btn" onclick="openDrawing()">🎨 画一幅给${pet.name}的画</button>`;
+  const drawings = S.drawings.slice().reverse();
+  if (!drawings.length) {
+    html += '<div class="photo-empty">🎨 还没有画作<br>点击上方按钮开始涂鸦吧~</div>';
+  } else {
+    html += '<div class="photo-grid">';
+    drawings.forEach(d => {
+      html += `<div class="photo-item" onclick="viewDrawing('${d.id}','album')">
+        <img src="${d.dataURL}" alt="">
+        ${d.petName?`<div class="photo-text">🐾 ${d.petName}</div>`:''}
+      </div>`;
+    });
+    html += '</div>';
+  }
+  c.innerHTML = html;
+}
+
+// 相册页 - 信件 Tab
+function renderAlbumLetterTab(c) {
+  const pet = getActivePet();
+  let html = `<button class="add-btn" onclick="writeLetter()">✉️ 给${pet.name}写信</button>`;
+  const letters = S.letters.slice().reverse();
+  if (!letters.length) {
+    html += '<div class="photo-empty">✉️ 还没有信件<br>给宠物写一句悄悄话吧~</div>';
+  } else {
+    html += '<div class="letter-list">';
+    letters.forEach(l => {
+      const replyReady = l.reply && Date.now() >= l.replyTime;
+      const cls = replyReady ? 'replied' : 'waiting';
+      const statusText = !l.reply ? '⏳ 路上' : (replyReady ? '💌 已回信' : '⏳ 回信中');
+      const preview = l.content.length > 20 ? l.content.slice(0,20) + '…' : l.content;
+      html += `<div class="letter-card ${cls}" onclick="openLetter('${l.id}','album')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:bold;color:#3a4a5c">👧 → 🐾 ${l.petName}</span>
+          <span style="font-size:11px;color:#8aa5b8">${statusText}</span>
+        </div>
+        <div style="font-size:13px;color:#5a6a7c">${preview}</div>
+        <div style="font-size:11px;color:#8aa5b8;margin-top:4px">${formatTime(l.time)}</div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  c.innerHTML = html;
 }
 
 function renderBag(c) {
@@ -2392,6 +2521,7 @@ function bindEvents() {
   $('#btnDecorate').addEventListener('click', openDecorate);
   $('#btnCamera').addEventListener('click', takePhoto);
   $('#btnMiniGame').addEventListener('click', openMiniGameMenu);
+  $('#btnBadges').addEventListener('click', openBadges);
   $('#btnPlayAll').addEventListener('click', btnPlayAll);
   $('#petDisplay').addEventListener('click', (e)=>{
     // 双击进详情
@@ -2411,6 +2541,7 @@ function init() {
   dailyRefresh();
   autoGenerateDiary();
   checkFestival();
+  maybeSpawnTraveler();
   bindEvents();
   switchPage('home');
   // 启动BGM
@@ -2720,11 +2851,120 @@ function finishEnglishLesson() {
       <div style="margin-top:10px;font-size:13px;color:#66BB6A">累计学习：${S.englishProgress.totalLearned} 个单词</div>
     </div>
     <div style="padding:12px;display:flex;gap:8px">
-      <button class="btn-cancel" style="flex:1" onclick="openEnglish()">返回单元列表</button>
-      <button class="btn-primary" style="flex:1" onclick="speakEnglish('${lesson.sentence.replace(/'/g,"\\'")}')">🔊 听句子</button>
+      <button class="btn-cancel" style="flex:1" onclick="openEnglish()">返回单元</button>
+      <button class="btn-primary" style="flex:1" onclick="startEnglishQuiz(${lesson.unit})">🧪 来挑战检验！</button>
     </div>
   `);
   englishState = null;
+}
+
+// ============ 英语学习检验 ============
+let englishQuizState = null;
+
+function startEnglishQuiz(unit) {
+  const lesson = D.ENGLISH_LESSONS.find(l=>l.unit===unit);
+  if (!lesson) return;
+  // 生成5道题：随机出英文选中文，或出中文选英文
+  const words = lesson.words.slice();
+  const questions = [];
+  for (let i = 0; i < 5 && words.length > 0; i++) {
+    const idx = Math.floor(Math.random() * words.length);
+    const w = words.splice(idx, 1)[0];
+    // 随机决定出题方向
+    const askEn = Math.random() < 0.5;
+    if (askEn) {
+      // 出英文，选中文
+      const wrongs = lesson.words.filter(x=>x.cn!==w.cn).sort(()=>Math.random()-0.5).slice(0,3).map(x=>x.cn);
+      const options = [...wrongs, w.cn].sort(()=>Math.random()-0.5);
+      questions.push({ q:`"${w.en}" 是什么意思？`, options, answer: options.indexOf(w.cn), word:w });
+    } else {
+      // 出中文，选英文
+      const wrongs = lesson.words.filter(x=>x.en!==w.en).sort(()=>Math.random()-0.5).slice(0,3).map(x=>x.en);
+      const options = [...wrongs, w.en].sort(()=>Math.random()-0.5);
+      questions.push({ q:`"${w.cn}" 的英文是？`, options, answer: options.indexOf(w.en), word:w });
+    }
+  }
+  englishQuizState = { questions, idx:0, correct:0, unit, reward:0 };
+  showEnglishQuiz();
+}
+
+function showEnglishQuiz() {
+  if (!englishQuizState) return;
+  const { questions, idx, correct } = englishQuizState;
+  if (idx >= questions.length) {
+    finishEnglishQuiz();
+    return;
+  }
+  const q = questions[idx];
+  openFullscreen(`
+    <div class="fs-header">
+      <div class="fs-title">🧪 学习检验</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="quiz-progress">
+      <span>第 ${idx+1} / ${questions.length} 题</span>
+      <span style="color:#66BB6A">✅ ${correct}</span>
+    </div>
+    <div class="quiz-question-box">
+      <div class="quiz-q-text">${q.q}</div>
+      <div class="quiz-options-vertical">
+        ${q.options.map((o,i)=>`<button class="quiz-option-v" onclick="answerEnglishQuiz(${i})">${o}</button>`).join('')}
+      </div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:#8aa5b8;padding:8px">💡 答对越多，奖励越多！</div>
+  `);
+}
+
+function answerEnglishQuiz(i) {
+  const st = englishQuizState;
+  const q = st.questions[st.idx];
+  if (i === q.answer) {
+    st.correct++;
+    st.reward += 5;
+    Sound.play('success');
+  } else {
+    Sound.play('fail');
+  }
+  st.idx++;
+  setTimeout(showEnglishQuiz, 600);
+}
+
+function finishEnglishQuiz() {
+  const { correct, questions, unit, reward } = englishQuizState;
+  const total = questions.length;
+  const allCorrect = correct === total;
+  let bonus = 0;
+  let bonusText = '';
+  if (allCorrect) {
+    bonus = 30;
+    bonusText = '🏆 全对奖励 +30 金币';
+  } else if (correct >= total - 1) {
+    bonus = 15;
+    bonusText = '⭐ 接近全对 +15 金币';
+  }
+  const totalReward = reward + bonus;
+  if (totalReward > 0) addCoin(totalReward);
+  Storage.save();
+  Sound.play(allCorrect ? 'levelup' : 'success');
+  const emoji = allCorrect ? '🏆' : (correct >= 3 ? '🎉' : '💪');
+  openFullscreen(`
+    <div class="fs-header"><div class="fs-title">🧪 检验结果</div><div style="width:60px"></div></div>
+    <div class="quiz-result">
+      <div class="result-emoji">${emoji}</div>
+      <div class="result-text">答对 ${correct} / ${total} 题</div>
+      <div style="margin:12px 0">
+        ${correct > 0 ? `<div style="color:#66BB6A;font-size:15px">基础奖励 +${reward} 金币</div>` : ''}
+        ${bonusText ? `<div style="color:#FFA726;font-size:15px;margin-top:4px">${bonusText}</div>` : ''}
+        ${totalReward > 0 ? `<div class="result-coin">🪙 共 +${totalReward} 金币</div>` : '<div style="color:#8aa5b8">继续努力哦~</div>'}
+      </div>
+      ${allCorrect ? '<div style="font-size:13px;color:#1565C0;background:#E3F2FD;padding:10px;border-radius:10px;margin-top:8px">🌟 太棒了！你已经完全掌握这个单元啦！</div>' : ''}
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="openEnglish()">返回单元</button>
+      <button class="btn-primary" style="flex:1" onclick="closeFullscreen()">完成</button>
+    </div>
+  `);
+  englishQuizState = null;
 }
 
 // 朗读英语（使用浏览器语音合成）
@@ -2739,4 +2979,552 @@ function speakEnglish(text) {
   } catch(e) {
     toast('发音失败~');
   }
+}
+
+// ============ 写信与回信功能 ============
+const LETTER_REPLY_DELAY = 5 * 60 * 1000; // 5分钟后回信（体验优化，避免等1小时）
+
+function writeLetter() {
+  const pet = getActivePet();
+  showModal('✉️ 给' + pet.name + '写信', `
+    <div style="font-size:13px;color:#6a7a8c;margin-bottom:6px">写一句想对${pet.name}说的话吧~</div>
+    <textarea id="letterContent" maxlength="100" placeholder="比如：${pet.name}，今天在学校被表扬了！" style="width:100%;min-height:80px;padding:10px;border:2px solid #D4ECFC;border-radius:10px;font-size:14px;font-family:inherit;resize:none"></textarea>
+    <div style="font-size:11px;color:#8aa5b8;margin-top:4px">💌 ${pet.name}会认真读你的信，并很快给你回信哦~</div>
+  `, `<button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-primary" onclick="sendLetter()">寄出</button>`);
+}
+
+function sendLetter() {
+  const content = $('#letterContent').value.trim();
+  if (!content) { toast('写点什么吧~'); return; }
+  const pet = getActivePet();
+  const reply = D.PET_REPLIES[Math.floor(Math.random()*D.PET_REPLIES.length)];
+  const letter = {
+    id: 'l_' + Date.now(),
+    petId: pet.id,
+    petName: pet.name,
+    content,
+    reply,
+    replyTime: Date.now() + LETTER_REPLY_DELAY,
+    time: Date.now(),
+    read: false,
+  };
+  S.letters.push(letter);
+  Storage.save();
+  closeModal();
+  Sound.play('success');
+  toast('💌 信已寄出！' + pet.name + '会很快回信~');
+  // 亲密+3
+  addIntimacy(3);
+  // 重新打开详情页
+  setTimeout(openPetDetail, 300);
+}
+
+function openLetter(id, from) {
+  const l = S.letters.find(x=>x.id===id);
+  if (!l) return;
+  const replyReady = l.reply && Date.now() >= l.replyTime;
+  let replyHTML = '';
+  if (!l.reply) {
+    replyHTML = '<div class="letter-waiting">⏳ 信还在路上，请耐心等待~</div>';
+  } else if (!replyReady) {
+    const left = Math.ceil((l.replyTime - Date.now()) / 60000);
+    replyHTML = `<div class="letter-waiting">⏳ ${l.petName}正在写回信，约还有${left}分钟~</div>`;
+  } else {
+    replyHTML = `<div class="letter-reply">
+      <div style="font-size:13px;color:#66BB6A;font-weight:bold;margin-bottom:6px">💌 ${l.petName}的回信：</div>
+      <div style="font-size:15px;color:#3a4a5c;line-height:1.6">${l.reply}</div>
+    </div>`;
+    if (!l.read) { l.read = true; Storage.save(); }
+  }
+  const backAction = from === 'album' ? 'closeFullscreen()' : 'openPetDetail()';
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="${backAction}">← 返回</button>
+      <div class="fs-title">✉️ 信件</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:16px">
+      <div class="letter-detail">
+        <div class="letter-from">👧 小欣 → 🐾 ${l.petName}</div>
+        <div style="font-size:11px;color:#8aa5b8;margin-bottom:8px">${formatTime(l.time)}</div>
+        <div class="letter-content">${l.content}</div>
+        ${replyHTML}
+      </div>
+    </div>
+    <div style="padding:12px">
+      <button class="btn-cancel" style="width:100%" onclick="${backAction}">返回</button>
+    </div>
+  `);
+}
+
+// 检查是否有新回信到达（用于主页提示）
+function checkNewReplies() {
+  const newReplies = S.letters.filter(l => l.reply && Date.now() >= l.replyTime && !l.read);
+  if (newReplies.length > 0) {
+    const l = newReplies[0];
+    setTimeout(() => {
+      toast(`💌 ${l.petName}给你回信啦！快去看看~`);
+    }, 2000);
+  }
+}
+
+// ============ 天气与四季系统 ============
+function updateWeather() {
+  const today = Storage.todayStr();
+  if (S.weather.date !== today) {
+    // 每天随机天气
+    const types = D.WEATHER_TYPES;
+    S.weather.type = types[Math.floor(Math.random()*types.length)].id;
+    S.weather.date = today;
+    // 根据月份设置季节
+    const month = new Date().getMonth() + 1;
+    if (month>=3 && month<=5) S.weather.season = 'spring';
+    else if (month>=6 && month<=8) S.weather.season = 'summer';
+    else if (month>=9 && month<=11) S.weather.season = 'autumn';
+    else S.weather.season = 'winter';
+    Storage.save();
+  }
+}
+
+function getWeatherInfo() {
+  return D.WEATHER_TYPES.find(w=>w.id===S.weather.type) || D.WEATHER_TYPES[0];
+}
+
+function renderWeatherEffect() {
+  const w = getWeatherInfo();
+  let particles = '';
+  if (w.particle === 'rain') {
+    // 雨滴
+    for (let i=0; i<30; i++) {
+      const left = Math.random()*100;
+      const delay = Math.random()*2;
+      const dur = 0.6 + Math.random()*0.4;
+      particles += `<div class="rain-drop" style="left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s"></div>`;
+    }
+  } else if (w.particle === 'snow') {
+    // 雪花
+    for (let i=0; i<20; i++) {
+      const left = Math.random()*100;
+      const delay = Math.random()*3;
+      const dur = 4 + Math.random()*3;
+      const size = 8 + Math.random()*8;
+      particles += `<div class="snow-flake" style="left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s;font-size:${size}px">❄</div>`;
+    }
+  } else if (w.particle === 'sun') {
+    // 阳光斑点
+    for (let i=0; i<8; i++) {
+      const left = Math.random()*100;
+      const top = Math.random()*60;
+      const delay = Math.random()*3;
+      particles += `<div class="sun-spot" style="left:${left}%;top:${top}%;animation-delay:${delay}s"></div>`;
+    }
+  } else if (w.particle === 'cloud') {
+    // 云朵
+    for (let i=0; i<3; i++) {
+      const left = Math.random()*80;
+      const delay = Math.random()*5;
+      particles += `<div class="cloud-puff" style="left:${left}%;animation-delay:${delay}s">☁️</div>`;
+    }
+  }
+  return `<div class="weather-effect weather-${w.id}">${particles}</div>`;
+}
+
+function getWeatherTalk() {
+  const talks = D.WEATHER_TALKS[S.weather.type] || D.WEATHER_TALKS.sunny;
+  return talks[Math.floor(Math.random()*talks.length)];
+}
+
+// ============ 旅行者系统 ============
+function maybeSpawnTraveler() {
+  // 每周1-2次，判断今天是否生成（基于周一日期）
+  const today = Storage.todayStr();
+  const monday = Storage.mondayStr();
+  // 本周已生成过的旅行者记录在 travelers 里的 visitedWeek
+  if (!S.travelers.visitedWeek || S.travelers.visitedWeek !== monday) {
+    S.travelers.visitedWeek = monday;
+    S.travelers.weekCount = 0;
+  }
+  if (S.travelers.lastDate === today) return; // 今天已生成
+  if (S.travelers.weekCount >= 2) return; // 本周已达上限
+  // 30% 概率生成
+  if (Math.random() < 0.3) {
+    const t = D.TRAVELERS[Math.floor(Math.random()*D.TRAVELERS.length)];
+    S.travelers.current = t;
+    S.travelers.lastDate = today;
+    S.travelers.weekCount = (S.travelers.weekCount||0) + 1;
+    Storage.save();
+    setTimeout(()=>{
+      toast(`🏕️ 一位${t.name}来访了！`);
+    }, 3000);
+  }
+}
+
+function showTraveler() {
+  if (!S.travelers.current) {
+    toast('今天没有旅行者来访~');
+    return;
+  }
+  const t = S.travelers.current;
+  const hasFood = (S.inventory[t.wantItemId] || 0) > 0;
+  openFullscreen(`
+    <div class="fs-header">
+      <div class="fs-title">🏕️ 旅行者来访</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:16px;text-align:center">
+      <div style="font-size:80px;margin:16px 0">${t.emoji}</div>
+      <div style="font-size:18px;font-weight:bold;color:#3a4a5c;margin-bottom:8px">${t.name}</div>
+      <div style="background:#EAF6FF;padding:14px;border-radius:12px;font-size:15px;color:#3a4a5c;line-height:1.6;margin:12px 0">
+        "你好呀，小朋友！我是来自远方的旅行者。<br>能给我一点${t.want}吗？我会送你一份远方礼物的~"
+      </div>
+      <div style="font-size:13px;color:#8aa5b8">你的背包里有${t.want}：${S.inventory[t.wantItemId]||0} 个</div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="closeFullscreen()">下次再说</button>
+      <button class="btn-primary" style="flex:1" ${hasFood?'':'disabled style="flex:1;opacity:0.5"'} onclick="helpTraveler()">给它${t.want}</button>
+    </div>
+  `);
+}
+
+function helpTraveler() {
+  const t = S.travelers.current;
+  if (!t) return;
+  if ((S.inventory[t.wantItemId]||0) <= 0) { toast('背包里没有'+t.want+'~'); return; }
+  S.inventory[t.wantItemId]--;
+  S.travelers.helpedCount = (S.travelers.helpedCount||0) + 1;
+  // 给礼物
+  S.inventory[t.gift] = (S.inventory[t.gift]||0) + 1;
+  const thanks = D.TRAVELER_THANKS[Math.floor(Math.random()*D.TRAVELER_THANKS.length)];
+  // 帮助3次送地图碎片
+  let extraMsg = '';
+  if (S.travelers.helpedCount % 3 === 0) {
+    S.travelers.mapFragments = (S.travelers.mapFragments||0) + 1;
+    extraMsg = `\n🗺️ 额外赠送：神秘地图碎片 ×1（已有${S.travelers.mapFragments}/3）`;
+    if (S.travelers.mapFragments >= 3 && !S.travelers.treasureClaimed) {
+      S.travelers.treasureClaimed = true;
+      addCoin(200);
+      extraMsg += '\n🏆 集齐3张碎片合成藏宝图！挖出宝藏：+200金币！';
+    }
+  }
+  Storage.save();
+  S.travelers.current = null;
+  Storage.save();
+  Sound.play('success');
+  closeFullscreen();
+  // 亲密+5
+  addIntimacy(5);
+  setTimeout(()=>{
+    openFullscreen(`
+      <div class="fs-header"><div class="fs-title">🎁 旅行者的礼物</div><div style="width:60px"></div></div>
+      <div class="fs-body" style="padding:20px;text-align:center">
+        <div style="font-size:60px;margin:12px 0">${t.emoji}</div>
+        <div style="background:#E8F5E9;padding:14px;border-radius:12px;font-size:15px;color:#2E7D32;line-height:1.8;margin:12px 0">"${thanks}"</div>
+        <div style="background:#FFF8E1;padding:12px;border-radius:10px;font-size:14px;color:#FFA726;margin-top:8px">
+          收到礼物：${t.gift} ×1
+          ${extraMsg}
+        </div>
+      </div>
+      <div style="padding:12px">
+        <button class="btn-primary" style="width:100%" onclick="closeFullscreen()">好开心~</button>
+      </div>
+    `);
+  }, 400);
+}
+
+// ============ 悄悄画（Canvas涂鸦） ============
+let drawState = null;
+
+function openDrawing() {
+  const pet = getActivePet();
+  drawState = { color:'#FF6B9D', size:6, isDrawing:false, sticker:null };
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="closeFullscreen()">← 返回</button>
+      <div class="fs-title">🎨 悄悄画给${pet.name}</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:12px">
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;justify-content:center">
+        ${['#FF6B9D','#5B9BD5','#66BB6A','#FFA726','#7E57C2','#000000'].map(c=>`<div class="color-pick ${c===drawState.color?'sel':''}" style="background:${c}" onclick="pickColor('${c}')"></div>`).join('')}
+        <div class="size-pick" onclick="pickSize(4)">细</div>
+        <div class="size-pick sel" onclick="pickSize(6)">中</div>
+        <div class="size-pick" onclick="pickSize(12)">粗</div>
+        <div class="size-pick" onclick="pickSize(20)">擦</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;justify-content:center">
+        ${['🦴','🎀','⭐','💖','🌈','🌸'].map(s=>`<button class="sticker-btn" onclick="pickSticker('${s}')">${s}</button>`).join('')}
+      </div>
+      <canvas id="drawCanvas" width="320" height="320" style="background:#fff;border:2px solid #D4ECFC;border-radius:12px;display:block;margin:0 auto;touch-action:none;cursor:crosshair"></canvas>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="clearDrawing()">🗑️ 清空</button>
+      <button class="btn-primary" style="flex:1" onclick="saveDrawing()">💾 送给${pet.name}</button>
+    </div>
+  `);
+  // 初始化画板
+  setTimeout(initCanvas, 100);
+}
+
+function initCanvas() {
+  const canvas = $('#drawCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  drawState.ctx = ctx;
+  drawState.canvas = canvas;
+
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
+    return { x:(touch.clientX-rect.left)*sx, y:(touch.clientY-rect.top)*sy };
+  };
+
+  const start = (e) => {
+    e.preventDefault();
+    if (drawState.sticker) {
+      // 贴贴纸
+      const p = getPos(e);
+      ctx.font = `${drawState.size*4}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(drawState.sticker, p.x, p.y);
+      drawState.sticker = null;
+      $$('.sticker-btn').forEach(b=>b.style.background='#EAF6FF');
+      return;
+    }
+    drawState.isDrawing = true;
+    const p = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  };
+  const move = (e) => {
+    if (!drawState.isDrawing) return;
+    e.preventDefault();
+    const p = getPos(e);
+    ctx.strokeStyle = drawState.size===20 ? '#fff' : drawState.color;
+    ctx.lineWidth = drawState.size===20 ? 25 : drawState.size;
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+  };
+  const end = () => { drawState.isDrawing = false; };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', move, {passive:false});
+  canvas.addEventListener('touchend', end);
+}
+
+function pickColor(c) {
+  drawState.color = c;
+  $$('.color-pick').forEach(d=>d.classList.remove('sel'));
+  event.target.classList.add('sel');
+}
+function pickSize(s) {
+  drawState.size = s;
+  $$('.size-pick').forEach(d=>d.classList.remove('sel'));
+  event.target.classList.add('sel');
+}
+function pickSticker(s) {
+  drawState.sticker = s;
+  drawState.size = 6;
+  $$('.sticker-btn').forEach(b=>b.style.background='#EAF6FF');
+  event.target.style.background = '#5B9BD5';
+}
+
+function clearDrawing() {
+  if (!drawState.ctx) return;
+  drawState.ctx.fillStyle = '#fff';
+  drawState.ctx.fillRect(0,0,drawState.canvas.width,drawState.canvas.height);
+}
+
+function saveDrawing() {
+  if (!drawState.canvas) return;
+  const pet = getActivePet();
+  const dataURL = drawState.canvas.toDataURL('image/png');
+  // 宠物反馈
+  const comments = [
+    '主人画的骨头看起来好好吃！',
+    '哇！主人画得真棒！',
+    '我喜欢这幅画！要珍藏起来~',
+    '主人真有才华！',
+    '这幅画让我心情好好~',
+  ];
+  const comment = comments[Math.floor(Math.random()*comments.length)];
+  S.drawings.push({
+    id:'d_'+Date.now(),
+    petId:pet.id,
+    petName:pet.name,
+    dataURL,
+    petComment:comment,
+    time:Date.now(),
+  });
+  Storage.save();
+  Sound.play('success');
+  closeFullscreen();
+  // 亲密+5
+  addIntimacy(5);
+  toast('🎨 画作已保存！'+pet.name+'：'+comment);
+  drawState = null;
+  setTimeout(openPetDetail, 300);
+}
+
+function viewDrawing(id, from) {
+  const d = S.drawings.find(x=>x.id===id);
+  if (!d) return;
+  const backAction = from === 'album' ? 'closeFullscreen()' : 'openPetDetail()';
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="${backAction}">← 返回</button>
+      <div class="fs-title">🎨 画作</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:16px;text-align:center">
+      <img src="${d.dataURL}" style="max-width:100%;border-radius:12px;border:2px solid #D4ECFC">
+      <div style="background:#E8F5E9;padding:12px;border-radius:10px;margin-top:12px;font-size:14px;color:#2E7D32">
+        🐾 ${d.petName}：${d.petComment}
+      </div>
+      <div style="font-size:11px;color:#8aa5b8;margin-top:8px">${formatTime(d.time)}</div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="deleteDrawing('${d.id}','${from||''}')">🗑️ 删除</button>
+      <button class="btn-primary" style="flex:1" onclick="${backAction}">返回</button>
+    </div>
+  `);
+}
+
+function deleteDrawing(id, from) {
+  if (!confirm('删除这幅画？')) return;
+  S.drawings = S.drawings.filter(x=>x.id!==id);
+  Storage.save();
+  toast('已删除');
+  if (from === 'album') {
+    closeFullscreen();
+    renderAlbumContent();
+  } else {
+    openPetDetail();
+  }
+}
+
+// ============ 徽章墙与称号系统 ============
+function checkBadges() {
+  const earned = new Set(S.badges);
+  const newBadges = [];
+  const pets = S.pets;
+  const totalIntimacy = pets.reduce((s,p)=>s+p.intimacy, 0);
+  const maxIntimacy = pets.reduce((m,p)=>Math.max(m,p.intimacy), 0);
+
+  const checks = [
+    ['coin_master', S.coins >= 10000],
+    ['pet_collector', pets.length >= 5],
+    ['intimacy_max', maxIntimacy >= 1000],
+    ['explorer', S.unlockedMaps && S.unlockedMaps.length >= 7],
+    ['sign_7', (S.signDays||0) >= 7],
+    ['breakfast_master', (S.stats && S.stats.feedCount||0) >= 10],
+    ['frisbee_pro', (S.stats && S.stats.frisbeeCount||0) >= 10],
+    ['bath_lover', (S.stats && S.stats.bathCount||0) >= 10],
+    ['quiz_scholar', (S.stats && S.stats.totalQuizRight||0) >= 50],
+    ['english_star', (S.englishProgress.totalLearned||0) >= 64],
+    ['account_keeper', (S.accounts||[]).length >= 20],
+    ['pen_pal', (S.letters||[]).length >= 5],
+    ['artist', (S.drawings||[]).length >= 3],
+    ['helper', (S.travelers && S.travelers.helpedCount||0) >= 3],
+  ];
+  checks.forEach(([id, cond]) => {
+    if (cond && !earned.has(id)) {
+      earned.add(id);
+      newBadges.push(id);
+    }
+  });
+  if (newBadges.length) {
+    S.badges = Array.from(earned);
+    Storage.save();
+    // 提示
+    newBadges.forEach((id, i) => {
+      const b = D.BADGES.find(x=>x.id===id);
+      if (b) {
+        setTimeout(()=>{
+          toast(`🏅 获得新徽章：${b.icon} ${b.name}！`);
+          Sound.play('levelup');
+        }, 500 + i*1500);
+      }
+    });
+  }
+}
+
+function openBadges() {
+  checkBadges();
+  let badgeHTML = D.BADGES.map(b => {
+    const earned = S.badges.includes(b.id);
+    return `<div class="badge-card ${earned?'earned':'locked'}">
+      <div class="badge-icon" style="background:${earned?b.color:'#ccc'}">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div>
+      ${earned?'<div class="badge-tag">已获得</div>':'<div class="badge-tag lock">未解锁</div>'}
+    </div>`;
+  }).join('');
+
+  // 称号选择
+  const availableTitles = D.TITLES.filter(t => checkTitleCond(t.id));
+  let titleHTML = availableTitles.map(t => {
+    const wearing = S.title === t.id;
+    return `<button class="title-chip ${wearing?'wearing':''}" onclick="wearTitle('${t.id}')">${t.name} ${wearing?'✓':''}</button>`;
+  }).join('');
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="closeFullscreen()">← 返回</button>
+      <div class="fs-title">🏅 徽章墙</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="fs-body" style="padding:14px">
+      <div class="badge-count">已获得 ${S.badges.length} / ${D.BADGES.length} 枚徽章</div>
+      <div class="badge-grid">${badgeHTML}</div>
+      ${availableTitles.length ? `
+      <div class="detail-section" style="margin-top:16px">
+        <h3>👑 称号（点击佩戴）</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${titleHTML}</div>
+      </div>` : ''}
+    </div>
+  `);
+}
+
+function checkTitleCond(id) {
+  const pets = S.pets;
+  const maxIntimacy = pets.reduce((m,p)=>Math.max(m,p.intimacy), 0);
+  const unlockedMapCount = (S.unlockedMaps||[]).length;
+  switch(id) {
+    case 'new_friend': return pets.length >= 1;
+    case 'pet_lover': return pets.length >= 3;
+    case 'best_friend': return maxIntimacy >= 500;
+    case 'soul_mate': return maxIntimacy >= 1000;
+    case 'scholar': return (S.stats && S.stats.totalQuizRight||0) >= 100;
+    case 'rich': return S.coins >= 5000;
+    case 'sign_keeper': return (S.signDays||0) >= 7;
+    case 'explorer_title': return unlockedMapCount >= 3;
+    default: return false;
+  }
+}
+
+function wearTitle(id) {
+  if (!checkTitleCond(id)) { toast('称号未解锁~'); return; }
+  S.title = (S.title === id) ? null : id;
+  Storage.save();
+  const t = D.TITLES.find(x=>x.id===id);
+  toast(S.title ? `已佩戴称号：${t.name}` : '已取消称号');
+  openBadges();
+}
+
+function getCurrentTitleName() {
+  if (!S.title) return '';
+  const t = D.TITLES.find(x=>x.id===S.title);
+  return t ? t.name : '';
 }

@@ -41,6 +41,12 @@ function getDefaultState() {
     accounts: [],                  // 记账记录 [{id, type:'income'|'expense', category, amount, note, time}]
     dailyAccountReward: { date:'', count:0 }, // 记账奖励每日次数
     englishProgress: { date:'', learned:0, totalLearned:0 }, // 英语学习进度
+    letters: [],                   // 信件 [{id, petId, petName, fromUser, content, reply, replyTime, time, read}]
+    weather: { date:'', type:'sunny', season:'spring' }, // 天气与季节
+    travelers: { lastDate:'', helpedCount:0, mapFragments:0, treasureClaimed:false }, // 旅行者
+    drawings: [],                  // 悄悄画 [{id, petId, dataURL, petComment, time}]
+    badges: [],                    // 已获得徽章ID列表
+    title: null,                   // 当前佩戴的称号ID
     sound: { bgm:true, effect:true }, // 音效开关
     stats: {                       // 统计数据（用于学习报告）
       weekStart: '',               // 周一日期
@@ -94,6 +100,12 @@ const Storage = {
         this.state.dailyPlayAll = Object.assign({}, def.dailyPlayAll, saved.dailyPlayAll||{});
         this.state.dailyAccountReward = Object.assign({}, def.dailyAccountReward, saved.dailyAccountReward||{});
         this.state.englishProgress = Object.assign({}, def.englishProgress, saved.englishProgress||{});
+        this.state.weather = Object.assign({}, def.weather, saved.weather||{});
+        this.state.travelers = Object.assign({}, def.travelers, saved.travelers||{});
+        this.state.letters = saved.letters || [];
+        this.state.drawings = saved.drawings || [];
+        this.state.badges = saved.badges || [];
+        this.state.title = saved.title || null;
       } else {
         this.state = getDefaultState();
         this.save();

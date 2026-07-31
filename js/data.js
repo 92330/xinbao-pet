@@ -609,9 +609,93 @@ const PET_TALKS = {
   normal:  ['今天也要加油哦~','抱抱我嘛','想出去玩','看看我新饰品~'],
 };
 
+// ============ 宠物回信模板 ============
+const PET_REPLIES = [
+  '哇！主人今天真棒！我好崇拜你！',
+  '收到你的信我好开心，今晚要多吃一口饭！',
+  '别担心，明天也会是美好的一天，我陪你！',
+  '主人是最厉害的！我也要向你学习！',
+  '嘻嘻，看到你的信我尾巴都摇起来了~',
+  '谢谢你告诉我这些，我会一直记在心里的！',
+  '主人不高兴的时候，让我用爪子握住你的手~',
+  '今天也是爱你的一天！爱你爱你！',
+  '你写的每个字我都好喜欢，再多写点嘛~',
+  '我会在梦里梦到主人的，晚安~',
+  '主人加油！我永远是你最忠实的伙伴！',
+  '收到信啦！我开心得转了三个圈~',
+];
+
+// ============ 天气系统 ============
+const WEATHER_TYPES = [
+  { id:'sunny',  name:'晴天', emoji:'☀️', color:'#FFE5B4', particle:'sun' },
+  { id:'cloudy', name:'多云', emoji:'⛅', color:'#D4ECFC', particle:'cloud' },
+  { id:'rainy',  name:'小雨', emoji:'🌧️', color:'#B0C4DE', particle:'rain' },
+  { id:'snowy',  name:'小雪', emoji:'🌨️', color:'#E0F0FF', particle:'snow' },
+];
+
+// 宠物在不同天气的悄悄话
+const WEATHER_TALKS = {
+  sunny:  ['今天阳光真好，想出去玩~','暖暖的，想晒太阳觉觉~'],
+  cloudy: ['云朵软软的，像棉花糖~','今天不冷不热，真舒服！'],
+  rainy:  ['有点冷，想抱抱~','下雨了，主人给我打伞嘛~'],
+  snowy:  ['下雪啦！想看雪！','冷冷的，要戴围巾~'],
+};
+
+// ============ 旅行者系统 ============
+const TRAVELERS = [
+  { id:'pigeon',  name:'戴帽子的信鸽', emoji:'🕊️', want:'🍞面包', wantItemId:'bread',  gift:'种子包' },
+  { id:'squirrel', name:'背包裹的松鼠', emoji:'🐿️', want:'🥜坚果', wantItemId:'peanut', gift:'神秘果实' },
+  { id:'rabbit',  name:'穿斗篷的兔子', emoji:'🐰', want:'🥕胡萝卜', wantItemId:'carrot', gift:'幸运草' },
+  { id:'turtle',  name:'慢吞吞的乌龟', emoji:'🐢', want:'🥬青菜', wantItemId:'vegetable', gift:'智慧石' },
+];
+
+// 旅行者感谢语
+const TRAVELER_THANKS = [
+  '你的善良，我会记得。',
+  '谢谢你，小朋友！愿好运常伴你~',
+  '太感谢了！这是我的一点心意~',
+  '你真好！远方的朋友会祝福你的！',
+];
+
+// ============ 徽章与称号系统 ============
+const BADGES = [
+  // 成就徽章
+  { id:'coin_master',   name:'金币大师',   icon:'💰', desc:'攒够10000金币',     color:'#FFD700' },
+  { id:'pet_collector', name:'宠物之家',   icon:'🏠', desc:'拥有5只宠物',       color:'#FF6B9D' },
+  { id:'intimacy_max',  name:'亲密无间',   icon:'💝', desc:'亲密度满级',       color:'#FF4757' },
+  { id:'explorer',      name:'全图探索者', icon:'🗺️', desc:'解锁全部地图',     color:'#5B9BD5' },
+  { id:'sign_7',        name:'坚持签到',   icon:'📅', desc:'连续签到7天',      color:'#66BB6A' },
+  // 互动徽章
+  { id:'breakfast_master', name:'早餐大师', icon:'🍖', desc:'喂食10次',         color:'#FFA726' },
+  { id:'frisbee_pro',      name:'飞盘高手', icon:'🥏', desc:'玩飞盘10次',       color:'#26C6DA' },
+  { id:'bath_lover',       name:'洗澡达人', icon:'🛁', desc:'洗澡10次',         color:'#42A5F5' },
+  // 学习徽章
+  { id:'quiz_scholar',  name:'答题学霸',   icon:'📚', desc:'答题累计50题',     color:'#7E57C2' },
+  { id:'english_star',  name:'英语之星',   icon:'🔤', desc:'学完8个英语单元',   color:'#26C6DA' },
+  { id:'account_keeper',name:'理财小能手', icon:'💰', desc:'记账累计20次',     color:'#9CCC65' },
+  // 情感徽章
+  { id:'pen_pal',       name:'笔友',       icon:'✉️', desc:'写5封信给宠物',     color:'#EC407A' },
+  { id:'artist',        name:'小画家',     icon:'🎨', desc:'画3幅悄悄画',       color:'#AB47BC' },
+  { id:'helper',        name:'热心助人',   icon:'🤝', desc:'帮助旅行者3次',     color:'#FF7043' },
+];
+
+// 称号系统（佩戴在头像旁）
+const TITLES = [
+  { id:'new_friend',     name:'初识之友',   cond:'拥有第一只宠物' },
+  { id:'pet_lover',      name:'宠物之友',   cond:'拥有3只宠物' },
+  { id:'best_friend',    name:'最爱伙伴',   cond:'亲密度达到500' },
+  { id:'soul_mate',      name:'灵魂伴侣',   cond:'亲密度满级1000' },
+  { id:'scholar',        name:'小学者',     cond:'答题累计100题' },
+  { id:'rich',           name:'小富翁',     cond:'拥有5000金币' },
+  { id:'sign_keeper',    name:'坚持之星',   cond:'连续签到7天' },
+  { id:'explorer_title', name:'大冒险家',   cond:'解锁3个地图' },
+];
+
 window.GAME_DATA = {
   PET_DEFS, FOOD_DEFS, ACCESSORY_DEFS, FURNITURE_DEFS, MAP_DEFS,
   PACKAGE_DEFS, INTERACTIONS, SKILL_DEFS, ACHIEVEMENTS, RANDOM_EVENTS,
   FORTUNES, DEFAULT_TASKS, QUESTION_BANK, QUESTION_OPTIONS,
   FESTIVALS, MONTHLY_CHALLENGES, PET_TALKS, ENGLISH_LESSONS,
+  PET_REPLIES, WEATHER_TYPES, WEATHER_TALKS, TRAVELERS, TRAVELER_THANKS,
+  BADGES, TITLES,
 };
