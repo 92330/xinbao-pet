@@ -47,6 +47,21 @@ function getDefaultState() {
     drawings: [],                  // 悄悄画 [{id, petId, dataURL, petComment, time}]
     badges: [],                    // 已获得徽章ID列表
     title: null,                   // 当前佩戴的称号ID
+    gameStats: {                   // 游戏中心统计
+      raceTotalScore: 0,           // 赛车累计得分
+      raceBestScore: 0,            // 赛车最高分
+      racePlays: 0,                // 赛车游玩次数
+      paintRainbows: 0,            // 小画家累计彩虹数
+      paintPlays: 0,               // 小画家游玩次数
+      memoryClears: 0,             // 记忆大厨通关次数
+      memoryPlays: 0,              // 记忆大厨游玩次数
+      rhythmPlays: 0,              // 节奏摇摆游玩次数
+      rhythmPerfect10: 0,          // 节奏10连Perfect次数
+      recentGameType: '',          // 最近连续游玩的游戏类型
+      recentGameCount: 0,          // 连续玩同一款游戏的次数
+      dailyRhythmRewardCount: 0,   // 节奏摇摆今日奖励次数
+      dailyRhythmDate: '',         // 节奏摇摆计数日期
+    },
     sound: { bgm:true, effect:true }, // 音效开关
     stats: {                       // 统计数据（用于学习报告）
       weekStart: '',               // 周一日期
@@ -106,6 +121,7 @@ const Storage = {
         this.state.drawings = saved.drawings || [];
         this.state.badges = saved.badges || [];
         this.state.title = saved.title || null;
+        this.state.gameStats = Object.assign({}, def.gameStats, saved.gameStats||{});
       } else {
         this.state = getDefaultState();
         this.save();

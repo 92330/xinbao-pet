@@ -119,6 +119,7 @@ const Sound = {
       case 'pet':   this.beep(600, 0.12,'sine',0.12); break;
       case 'buy':   this.beep(900, 0.08); setTimeout(()=>this.beep(1300,0.1),80); break;
       case 'error': this.beep(200, 0.2,'square',0.12); break;
+      case 'fail':  this.beep(250, 0.18,'sawtooth',0.12); setTimeout(()=>this.beep(180,0.15,'sawtooth',0.1),100); break;
       case 'levelup':[523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.beep(f,0.15,'triangle',0.15),i*100)); break;
       case 'success':[659,784,1047].forEach((f,i)=>setTimeout(()=>this.beep(f,0.12,'sine',0.15),i*80)); break;
     }
@@ -163,6 +164,7 @@ function switchPage(name) {
   else if (name==='task') renderTaskPage();
   else if (name==='shop') renderShop();
   else if (name==='album') renderAlbum();
+  else if (name==='game') renderGameCenter();
 }
 
 // ============ 每日刷新 ============
@@ -3423,7 +3425,7 @@ function checkBadges() {
   const maxIntimacy = pets.reduce((m,p)=>Math.max(m,p.intimacy), 0);
 
   const checks = [
-    ['coin_master', S.coins >= 10000],
+    ['coin_master', S.coin >= 10000],
     ['pet_collector', pets.length >= 5],
     ['intimacy_max', maxIntimacy >= 1000],
     ['explorer', S.unlockedMaps && S.unlockedMaps.length >= 7],
@@ -3437,6 +3439,16 @@ function checkBadges() {
     ['pen_pal', (S.letters||[]).length >= 5],
     ['artist', (S.drawings||[]).length >= 3],
     ['helper', (S.travelers && S.travelers.helpedCount||0) >= 3],
+    // 游戏徽章
+    ['race_rookie', S.gameStats.raceTotalScore >= 5000],
+    ['race_king', S.gameStats.raceBestScore >= 2000],
+    ['memory_clear', S.gameStats.memoryClears >= 1],
+    ['rainbow_lover', S.gameStats.paintRainbows >= 10],
+    ['game_master',
+      (S.gameStats.racePlays >= 1) &&
+      (S.gameStats.paintPlays >= 1) &&
+      (S.gameStats.memoryPlays >= 1) &&
+      ((S.gameStats.rhythmPlays||0) >= 1)],
   ];
   checks.forEach(([id, cond]) => {
     if (cond && !earned.has(id)) {
@@ -3507,7 +3519,7 @@ function checkTitleCond(id) {
     case 'best_friend': return maxIntimacy >= 500;
     case 'soul_mate': return maxIntimacy >= 1000;
     case 'scholar': return (S.stats && S.stats.totalQuizRight||0) >= 100;
-    case 'rich': return S.coins >= 5000;
+    case 'rich': return S.coin >= 5000;
     case 'sign_keeper': return (S.signDays||0) >= 7;
     case 'explorer_title': return unlockedMapCount >= 3;
     default: return false;
@@ -3527,4 +3539,955 @@ function getCurrentTitleName() {
   if (!S.title) return '';
   const t = D.TITLES.find(x=>x.id===S.title);
   return t ? t.name : '';
+}
+
+// ==================================================================
+// 🎮 游戏中心（全新独立页面）
+// ==================================================================
+
+// 游戏疲劳检测：同一款"挑战性"游戏连续玩>3局，引导切换
+function checkGameFatigue(type) {
+  // type: 'race' | 'memory' | 'paint' | 'rhythm'
+  const heavy = type === 'race' || type === 'memory';
+  if (heavy) {
+    if (S.gameStats.recentGameType === type) {
+      S.gameStats.recentGameCount++;
+      if (S.gameStats.recentGameCount >= 3) {
+        const pet = getActivePet();
+        setTimeout(() => {
+          toast(`🥱 ${pet.name}打哈欠：主人，玩点安静的吧？试试云端小画家~`);
+        }, 1200);
+        S.gameStats.recentGameCount = 0;
+      }
+    } else {
+      S.gameStats.recentGameType = type;
+      S.gameStats.recentGameCount = 1;
+    }
+  } else {
+    // 休闲游戏不统计疲劳，重置
+    S.gameStats.recentGameType = type;
+    S.gameStats.recentGameCount = 0;
+  }
+  Storage.save();
+}
+
+// 渲染游戏中心页面
+function renderGameCenter() {
+  const coinEl = $('#gameCoin');
+  if (coinEl) coinEl.textContent = '🪙 ' + S.coin;
+  const pet = getActivePet();
+  const today = Storage.todayStr();
+  if (S.gameStats.dailyRhythmDate !== today) {
+    S.gameStats.dailyRhythmRewardCount = 0;
+    S.gameStats.dailyRhythmDate = today;
+  }
+  const rhythmLeft = Math.max(0, 3 - S.gameStats.dailyRhythmRewardCount);
+
+  const html = `
+    <div class="game-welcome">
+      <div class="game-welcome-emoji">🎮</div>
+      <div class="game-welcome-text">
+        <div class="game-welcome-title">欢迎来到游戏中心！</div>
+        <div class="game-welcome-sub">完成任务赚金币，来这里放松一下吧~</div>
+      </div>
+    </div>
+
+    <div class="game-list">
+      <!-- 🏎️ 飞驰小爪 -->
+      <div class="game-card race">
+        <div class="game-card-icon">🏎️</div>
+        <div class="game-card-info">
+          <div class="game-card-name">飞驰小爪</div>
+          <div class="game-card-desc">${pet.name}参加赛车，左右躲开障碍冲终点！</div>
+          <div class="game-card-meta">
+            <span class="game-tag pay">💰 报名费 50</span>
+            <span class="game-tag mood">😊 心情好 速度快</span>
+            <span class="game-tag hunger">🍖 饱腹<30 不能参赛</span>
+          </div>
+          <div class="game-card-stats">
+            <span>最高分：${S.gameStats.raceBestScore}</span>
+            <span>累计分：${S.gameStats.raceTotalScore}</span>
+          </div>
+        </div>
+        <button class="game-card-btn" onclick="startRaceGame()">开始</button>
+      </div>
+
+      <!-- 🪁 云端小画家 -->
+      <div class="game-card paint">
+        <div class="game-card-icon">🪁</div>
+        <div class="game-card-info">
+          <div class="game-card-name">云端小画家</div>
+          <div class="game-card-desc">在云朵上接彩色颜料，拼出彩虹！</div>
+          <div class="game-card-meta">
+            <span class="game-tag free">✨ 免费畅玩</span>
+            <span class="game-tag reward">🌈 画彩虹 +心情</span>
+          </div>
+          <div class="game-card-stats">
+            <span>累计彩虹：${S.gameStats.paintRainbows}</span>
+          </div>
+        </div>
+        <button class="game-card-btn free" onclick="startPaintGame()">开始</button>
+      </div>
+
+      <!-- 🍽️ 记忆大厨 -->
+      <div class="game-card memory">
+        <div class="game-card-icon">🍽️</div>
+        <div class="game-card-info">
+          <div class="game-card-name">记忆大厨</div>
+          <div class="game-card-desc">翻牌找出相同的宠物食物，赢取精致美食！</div>
+          <div class="game-card-meta">
+            <span class="game-tag pay">💰 报名费 20</span>
+            <span class="game-tag reward">🍰 通关得食物</span>
+          </div>
+          <div class="game-card-stats">
+            <span>通关：${S.gameStats.memoryClears}次</span>
+          </div>
+        </div>
+        <button class="game-card-btn" onclick="startMemoryGame()">开始</button>
+      </div>
+
+      <!-- 🎵 节奏摇摆（简化版） -->
+      <div class="game-card rhythm">
+        <div class="game-card-icon">🎵</div>
+        <div class="game-card-info">
+          <div class="game-card-name">节奏摇摆</div>
+          <div class="game-card-desc">跟随节奏点击音符，Perfect越多奖励越多！</div>
+          <div class="game-card-meta">
+            <span class="game-tag free">✨ 免费畅玩</span>
+            <span class="game-tag reward">🪙 前3次得金币</span>
+            <span class="game-tag daily">每日剩余：${rhythmLeft}</span>
+          </div>
+        </div>
+        <button class="game-card-btn free" onclick="startRhythmGame()">开始</button>
+      </div>
+    </div>
+
+    <!-- 旧小游戏入口 -->
+    <div class="old-games-section">
+      <div class="old-games-title">其他小游戏</div>
+      <div class="old-games-list">
+        <div class="old-game-card" onclick="closeFullscreen();openMiniGameMenuFromGame()">
+          <div class="old-game-emoji">🥏🧩</div>
+          <div class="old-game-name">接飞盘 / 宠物拼图</div>
+        </div>
+      </div>
+    </div>
+  `;
+  $('#gameCenter').innerHTML = html;
+}
+
+// 兼容：从游戏中心跳转到旧的小游戏菜单
+function openMiniGameMenuFromGame() {
+  setTimeout(() => openMiniGameMenu(), 100);
+}
+
+// ============================================================
+// 🏎️ Game 1: 飞驰小爪（赛车闯关）
+// ============================================================
+let raceState = null;
+
+function startRaceGame() {
+  const pet = getActivePet();
+  if (pet.hunger < 30) { toast(pet.name + '饿肚子了，先喂饱它吧~'); return; }
+  if (S.coin < 50) { toast('金币不足，报名费需要50金币~'); return; }
+  if (!confirm('报名费：50金币，是否开始比赛？')) return;
+  spendCoin(50);
+  S.gameStats.racePlays++;
+  checkGameFatigue('race');
+  Storage.save();
+
+  const petDef = D.PET_DEFS[pet.defId];
+  // 速度加成：心情好+10%
+  const moodBoost = pet.mood >= 70 ? 1.1 : 1.0;
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="quitRace()">← 退出</button>
+      <div class="fs-title">🏎️ 飞驰小爪</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="race-container">
+      <div class="race-hud">
+        <span>🏁 <span id="raceScore">0</span>分</span>
+        <span>❤️ <span id="raceHp">3</span></span>
+        <span>⏱️ <span id="raceDist">0</span>m</span>
+      </div>
+      <div class="race-track" id="raceTrack">
+        <div class="race-pet" id="racePet">${petDef.emoji}🏎️</div>
+      </div>
+      <div class="race-ctrl">
+        <button class="race-btn left" id="raceBtnL">◀️</button>
+        <div class="race-tip">左右滑动或点击按钮移动</div>
+        <button class="race-btn right" id="raceBtnR">▶️</button>
+      </div>
+    </div>
+  `);
+
+  raceState = {
+    score: 0,
+    hp: 3,
+    distance: 0,
+    speed: 2 * moodBoost,
+    petLane: 1, // 0,1,2 三车道
+    obstacles: [],
+    coins: [],
+    over: false,
+    tickTimer: null,
+    spawnTimer: null,
+  };
+
+  // 初始位置
+  const petEl = $('#racePet');
+  petEl.style.left = (33 * raceState.petLane + 16) + '%';
+
+  // 绑定按钮
+  const moveLane = (delta) => {
+    if (!raceState || raceState.over) return;
+    raceState.petLane = Math.max(0, Math.min(2, raceState.petLane + delta));
+    const pet = $('#racePet');
+    if (pet) pet.style.left = (33 * raceState.petLane + 16) + '%';
+    Sound.play('click');
+  };
+  $('#raceBtnL').addEventListener('click', () => moveLane(-1));
+  $('#raceBtnR').addEventListener('click', () => moveLane(1));
+
+  // 触摸滑动
+  const track = $('#raceTrack');
+  let touchStartX = 0;
+  track.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', (e) => {
+    const dx = (e.changedTouches[0].clientX - touchStartX);
+    if (Math.abs(dx) > 30) moveLane(dx > 0 ? 1 : -1);
+  }, { passive: true });
+  // 键盘支持
+  const keyHandler = (e) => {
+    if (e.key === 'ArrowLeft') moveLane(-1);
+    if (e.key === 'ArrowRight') moveLane(1);
+  };
+  document.addEventListener('keydown', keyHandler);
+  raceState._keyHandler = keyHandler;
+
+  // 主循环
+  raceState.tickTimer = setInterval(raceTick, 30);
+  raceState.spawnTimer = setInterval(raceSpawn, 800);
+}
+
+function raceTick() {
+  if (!raceState || raceState.over) return;
+  const st = raceState;
+  const track = $('#raceTrack');
+  if (!track) return;
+
+  // 速度逐渐加快
+  st.speed = Math.min(7, 2 + st.distance * 0.003);
+
+  // 距离
+  st.distance += st.speed;
+  const distEl = $('#raceDist'); if (distEl) distEl.textContent = Math.floor(st.distance);
+
+  // 金币分数
+  st.score = Math.floor(st.distance);
+  const scoreEl = $('#raceScore'); if (scoreEl) scoreEl.textContent = st.score;
+
+  // 更新障碍物位置
+  st.obstacles.forEach((o, i) => {
+    o.y += st.speed;
+    const el = document.getElementById('raceOb' + o.id);
+    if (el) {
+      el.style.top = o.y + '%';
+      // 碰撞检测（和宠物同一车道且重叠）
+      if (Math.abs(o.y - 80) < 8 && o.lane === st.petLane && !o.hit) {
+        o.hit = true;
+        st.hp--;
+        Sound.play('fail');
+        const hpEl = $('#raceHp'); if (hpEl) hpEl.textContent = st.hp;
+        el.style.opacity = '0.3';
+        if (st.hp <= 0) {
+          setTimeout(endRaceGame, 200);
+        }
+      }
+      // 移出屏幕删除
+      if (o.y > 110) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        st.obstacles.splice(i, 1);
+      }
+    }
+  });
+
+  // 更新金币位置
+  st.coins.forEach((c, i) => {
+    c.y += st.speed;
+    const el = document.getElementById('raceCoin' + c.id);
+    if (el) {
+      el.style.top = c.y + '%';
+      if (Math.abs(c.y - 80) < 8 && c.lane === st.petLane && !c.collected) {
+        c.collected = true;
+        st.score += 50;
+        Sound.play('success');
+        el.style.transform = 'scale(1.5)';
+        el.style.opacity = '0';
+      }
+      if (c.y > 110) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        st.coins.splice(i, 1);
+      }
+    }
+  });
+}
+
+let _raceIdCounter = 0;
+function raceSpawn() {
+  if (!raceState || raceState.over) return;
+  const st = raceState;
+  const track = $('#raceTrack');
+  if (!track) return;
+  const lane = Math.floor(Math.random() * 3);
+  const isCoin = Math.random() < 0.35;
+
+  if (isCoin) {
+    const id = ++_raceIdCounter;
+    st.coins.push({ id, lane, y: -10, collected: false });
+    const el = document.createElement('div');
+    el.id = 'raceCoin' + id;
+    el.className = 'race-coin';
+    el.style.left = (33 * lane + 16) + '%';
+    el.style.top = '-10%';
+    el.textContent = '🪙';
+    track.appendChild(el);
+  } else {
+    const id = ++_raceIdCounter;
+    const obstacles = ['🧱','🚧','🪨','🌵'];
+    const emoji = obstacles[Math.floor(Math.random()*obstacles.length)];
+    st.obstacles.push({ id, lane, y: -10, hit: false });
+    const el = document.createElement('div');
+    el.id = 'raceOb' + id;
+    el.className = 'race-ob';
+    el.style.left = (33 * lane + 16) + '%';
+    el.style.top = '-10%';
+    el.textContent = emoji;
+    track.appendChild(el);
+  }
+}
+
+function quitRace() {
+  if (raceState && !raceState.over) {
+    raceState.over = true;
+    if (confirm('退出比赛？当前分数将作为成绩结算')) {
+      endRaceGame(true);
+    } else {
+      raceState.over = false;
+    }
+  }
+}
+
+function endRaceGame(early) {
+  if (!raceState || raceState._ended) return;
+  raceState._ended = true;
+  raceState.over = true;
+  if (raceState.tickTimer) clearInterval(raceState.tickTimer);
+  if (raceState.spawnTimer) clearInterval(raceState.spawnTimer);
+  if (raceState._keyHandler) document.removeEventListener('keydown', raceState._keyHandler);
+
+  const finalScore = raceState.score;
+  // 奖励：每100分=5金币，封顶150金币
+  const reward = Math.min(150, Math.floor(finalScore / 20));
+  // 更新记录
+  S.gameStats.raceTotalScore += finalScore;
+  S.gameStats.raceBestScore = Math.max(S.gameStats.raceBestScore, finalScore);
+  Storage.save();
+  if (reward > 0) addCoin(reward);
+  Sound.play(finalScore > 1000 ? 'levelup' : 'success');
+  checkBadges();
+
+  openFullscreen(`
+    <div class="fs-header"><div class="fs-title">🏁 比赛结束</div><div style="width:60px"></div></div>
+    <div class="quiz-result">
+      <div class="result-emoji">${finalScore > 1500 ? '🏆' : finalScore > 800 ? '🥇' : finalScore > 300 ? '🥈' : '🏎️'}</div>
+      <div class="result-text">得分 ${finalScore}</div>
+      <div style="margin:12px 0;font-size:14px;color:#5a6a7c">
+        ${reward > 0 ? `<div class="result-coin">🪙 +${reward} 金币</div>` : '<div>继续努力，冲更高分！</div>'}
+        <div style="margin-top:8px">📊 最高记录：${S.gameStats.raceBestScore} 分</div>
+      </div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-primary" style="flex:1" onclick="closeFullscreen();startRaceGame()">再来一局</button>
+    </div>
+  `);
+  raceState = null;
+}
+
+// ============================================================
+// 🪁 Game 2: 云端小画家（接颜色画彩虹）
+// ============================================================
+let paintState = null;
+
+function startPaintGame() {
+  S.gameStats.paintPlays++;
+  checkGameFatigue('paint');
+  Storage.save();
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="quitPaint()">← 退出</button>
+      <div class="fs-title">🪁 云端小画家</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="paint-container">
+      <div class="paint-hud">
+        <span>🌈 已画 <span id="paintRainbow">0</span> 道</span>
+        <span>🎨 接住 <span id="paintCombo">0</span> 个同色</span>
+      </div>
+      <div class="paint-track" id="paintTrack">
+        <div class="paint-pet" id="paintPet">☁️🐾☁️</div>
+      </div>
+      <div class="paint-colors" id="paintColors">
+        ${['🔴','🟡','🟢','🔵','🟣'].map(c=>`<span class="paint-dot" data-c="${c}" style="opacity:0.3">${c}</span>`).join('')}
+      </div>
+      <div class="race-ctrl">
+        <button class="race-btn left" id="paintBtnL">◀️</button>
+        <div class="race-tip">左右移动，接住3个相同颜色画彩虹！</div>
+        <button class="race-btn right" id="paintBtnR">▶️</button>
+      </div>
+    </div>
+  `);
+
+  paintState = {
+    rainbows: 0,
+    lane: 2, // 0-4 五车道
+    drops: [],
+    combo: {}, // { '🔴': 0, '🟡': 0 ...}
+    tickTimer: null,
+    spawnTimer: null,
+    over: false,
+    lastColor: null,
+    touchStartX: 0,
+  };
+
+  const petEl = $('#paintPet');
+  petEl.style.left = (20 * paintState.lane + 10) + '%';
+
+  const moveLane = (delta) => {
+    if (!paintState || paintState.over) return;
+    paintState.lane = Math.max(0, Math.min(4, paintState.lane + delta));
+    const pet = $('#paintPet');
+    if (pet) pet.style.left = (20 * paintState.lane + 10) + '%';
+  };
+  $('#paintBtnL').addEventListener('click', () => moveLane(-1));
+  $('#paintBtnR').addEventListener('click', () => moveLane(1));
+  const track = $('#paintTrack');
+  track.addEventListener('touchstart', (e) => { paintState.touchStartX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', (e) => {
+    const dx = (e.changedTouches[0].clientX - paintState.touchStartX);
+    if (Math.abs(dx) > 25) moveLane(dx > 0 ? 1 : -1);
+  }, { passive: true });
+
+  paintState.tickTimer = setInterval(paintTick, 40);
+  paintState.spawnTimer = setInterval(paintSpawn, 700);
+}
+
+let _paintIdCounter = 0;
+function paintSpawn() {
+  if (!paintState || paintState.over) return;
+  const st = paintState;
+  const track = $('#paintTrack');
+  if (!track) return;
+  const colors = ['🔴','🟡','🟢','🔵','🟣'];
+  const color = colors[Math.floor(Math.random()*5)];
+  const lane = Math.floor(Math.random() * 5);
+  const id = ++_paintIdCounter;
+  st.drops.push({ id, lane, y: -10, color, collected: false });
+  const el = document.createElement('div');
+  el.id = 'paintDrop' + id;
+  el.className = 'paint-drop';
+  el.style.left = (20 * lane + 10) + '%';
+  el.style.top = '-10%';
+  el.textContent = color;
+  track.appendChild(el);
+}
+
+function paintTick() {
+  if (!paintState || paintState.over) return;
+  const st = paintState;
+  const track = $('#paintTrack');
+  if (!track) return;
+
+  st.drops.forEach((d, i) => {
+    d.y += 1.6;
+    const el = document.getElementById('paintDrop' + d.id);
+    if (el) {
+      el.style.top = d.y + '%';
+      if (Math.abs(d.y - 80) < 8 && d.lane === st.lane && !d.collected) {
+        d.collected = true;
+        Sound.play('pet');
+        // 累计这个颜色
+        st.combo[d.color] = (st.combo[d.color] || 0) + 1;
+        st.lastColor = d.color;
+        // 高亮
+        const dotEl = document.querySelector('.paint-dot[data-c="'+d.color+'"]');
+        if (dotEl) dotEl.style.opacity = String(Math.min(1, st.combo[d.color] / 3 + 0.3));
+
+        $('#paintCombo').textContent = st.combo[d.color] || 0;
+        // 达到3个，画一道彩虹
+        if (st.combo[d.color] >= 3) {
+          st.rainbows++;
+          st.combo[d.color] = 0;
+          $('#paintRainbow').textContent = st.rainbows;
+          // 心情+2~5
+          const moodGain = 2 + Math.floor(Math.random() * 4);
+          const pet = getActivePet();
+          pet.mood = Math.min(100, pet.mood + moodGain);
+          Storage.save();
+          Sound.play('levelup');
+          toast(`🌈 画出一道彩虹！${pet.name}心情+${moodGain}`);
+          S.gameStats.paintRainbows++;
+          Storage.save();
+          // 闪彩虹
+          track.classList.add('rainbow-flash');
+          setTimeout(() => track.classList.remove('rainbow-flash'), 1000);
+          // 重置所有颜色高亮
+          document.querySelectorAll('.paint-dot').forEach(d => d.style.opacity = '0.3');
+          $('#paintCombo').textContent = 0;
+        }
+        el.style.transform = 'scale(1.8)';
+        el.style.opacity = '0';
+      }
+      if (d.y > 110) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        st.drops.splice(i, 1);
+      }
+    }
+  });
+}
+
+function quitPaint() {
+  if (paintState && !paintState.over) {
+    if (confirm('退出小画家？')) endPaintGame();
+  }
+}
+
+function endPaintGame() {
+  if (!paintState || paintState._ended) return;
+  paintState._ended = true;
+  paintState.over = true;
+  if (paintState.tickTimer) clearInterval(paintState.tickTimer);
+  if (paintState.spawnTimer) clearInterval(paintState.spawnTimer);
+  const rainbows = paintState.rainbows;
+  checkBadges();
+  openFullscreen(`
+    <div class="fs-header"><div class="fs-title">🪁 本轮结束</div><div style="width:60px"></div></div>
+    <div class="quiz-result">
+      <div class="result-emoji">${rainbows >= 5 ? '🌈🌈🌈' : rainbows >= 2 ? '🌈🌈' : '🌈'}</div>
+      <div class="result-text">画了 ${rainbows} 道彩虹</div>
+      <div style="margin:12px 0;font-size:14px;color:#5a6a7c">
+        <div>😊 ${getActivePet().name}心情愉快~</div>
+        <div style="margin-top:8px">📊 累计彩虹：${S.gameStats.paintRainbows} 道</div>
+      </div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-primary" style="flex:1" onclick="closeFullscreen();startPaintGame()">再画一局</button>
+    </div>
+  `);
+  paintState = null;
+}
+
+// ============================================================
+// 🍽️ Game 3: 记忆大厨（翻牌配对）
+// ============================================================
+let memoryState = null;
+
+function startMemoryGame() {
+  if (S.coin < 20) { toast('金币不足，报名费需要20金币~'); return; }
+  if (!confirm('报名费：20金币，开始烹饪记忆挑战？')) return;
+  spendCoin(20);
+  S.gameStats.memoryPlays++;
+  checkGameFatigue('memory');
+  Storage.save();
+
+  // 4x4 = 8对
+  const foods = D.FOOD_DEFS.slice(0, 8);
+  let cards = [];
+  foods.forEach(f => {
+    cards.push({ id: f.id + '_a', emoji: f.emoji, pair: f.id, flipped: false, matched: false });
+    cards.push({ id: f.id + '_b', emoji: f.emoji, pair: f.id, flipped: false, matched: false });
+  });
+  // 洗牌
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  memoryState = {
+    cards,
+    selected: null, // {idx, card}
+    matchedPairs: 0,
+    moves: 0,
+    lock: false,
+    timer: 0,
+    tickTimer: null,
+    _ended: false,
+  };
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="quitMemory()">← 退出</button>
+      <div class="fs-title">🍽️ 记忆大厨</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="memory-container">
+      <div class="memory-hud">
+        <span>✅ 配对 <span id="memoryPairs">0</span>/8</span>
+        <span>🔄 步数 <span id="memoryMoves">0</span></span>
+        <span>⏱️ <span id="memoryTime">0</span>s</span>
+      </div>
+      <div class="memory-grid" id="memoryGrid"></div>
+      <div style="text-align:center;padding:8px;font-size:12px;color:#8aa5b8">翻出相同的食物配对，全部通关得美食奖励！</div>
+    </div>
+  `);
+
+  memoryState.tickTimer = setInterval(() => {
+    if (!memoryState) return;
+    memoryState.timer++;
+    const t = $('#memoryTime'); if (t) t.textContent = memoryState.timer;
+  }, 1000);
+
+  renderMemoryGrid();
+}
+
+function renderMemoryGrid() {
+  const grid = $('#memoryGrid');
+  if (!grid) return;
+  grid.innerHTML = memoryState.cards.map((c, i) => `
+    <div class="memory-card ${c.flipped||c.matched?'flipped':''} ${c.matched?'matched':''}"
+         onclick="flipMemoryCard(${i})">
+      <div class="memory-face memory-back">🍽️</div>
+      <div class="memory-face memory-front">${c.emoji}</div>
+    </div>
+  `).join('');
+}
+
+function flipMemoryCard(idx) {
+  if (!memoryState || memoryState.lock || memoryState._ended) return;
+  const st = memoryState;
+  const c = st.cards[idx];
+  if (c.flipped || c.matched) return;
+  c.flipped = true;
+  Sound.play('click');
+  renderMemoryGrid();
+
+  if (!st.selected) {
+    st.selected = { idx, card: c };
+  } else {
+    st.moves++;
+    $('#memoryMoves').textContent = st.moves;
+    st.lock = true;
+    const prev = st.selected;
+    if (prev.card.pair === c.pair) {
+      // 配对成功
+      setTimeout(() => {
+        prev.card.matched = true;
+        c.matched = true;
+        st.selected = null;
+        st.matchedPairs++;
+        $('#memoryPairs').textContent = st.matchedPairs;
+        Sound.play('success');
+        st.lock = false;
+        renderMemoryGrid();
+        if (st.matchedPairs >= 8) {
+          setTimeout(endMemoryGame, 600);
+        }
+      }, 400);
+    } else {
+      // 配对失败
+      setTimeout(() => {
+        prev.card.flipped = false;
+        c.flipped = false;
+        st.selected = null;
+        st.lock = false;
+        Sound.play('fail');
+        renderMemoryGrid();
+      }, 800);
+    }
+  }
+}
+
+function quitMemory() {
+  if (!memoryState || memoryState._ended) return;
+  if (confirm('退出记忆大厨？')) endMemoryGame(true);
+}
+
+function endMemoryGame(quit) {
+  if (!memoryState || memoryState._ended) return;
+  memoryState._ended = true;
+  if (memoryState.tickTimer) clearInterval(memoryState.tickTimer);
+
+  const cleared = memoryState.matchedPairs >= 8;
+  let reward = null;
+  if (cleared) {
+    // 奖励精致食物（随机小零食/蛋糕/牛奶/小鱼干/冰淇淋）
+    const options = ['f_snack','cake','milk','fish','icecream'];
+    const pickId = options[Math.floor(Math.random()*options.length)];
+    S.inventory[pickId] = (S.inventory[pickId]||0) + 1;
+    reward = D.FOOD_DEFS.find(f=>f.id===pickId);
+    S.gameStats.memoryClears++;
+    Storage.save();
+    Sound.play('levelup');
+  } else {
+    Sound.play('fail');
+  }
+  Storage.save();
+  checkBadges();
+
+  const emoji = cleared ? '🏆' : (quit ? '🚪' : '💪');
+  const title = cleared ? '🎉 通关成功' : (quit ? '已退出' : '继续加油');
+  openFullscreen(`
+    <div class="fs-header"><div class="fs-title">${title}</div><div style="width:60px"></div></div>
+    <div class="quiz-result">
+      <div class="result-emoji">${emoji}</div>
+      <div class="result-text">配对 ${memoryState.matchedPairs}/8</div>
+      <div style="margin:12px 0;font-size:14px;color:#5a6a7c">
+        <div>🔄 步数：${memoryState.moves}</div>
+        <div>⏱️ 用时：${memoryState.timer}秒</div>
+        ${reward ? `<div style="margin-top:10px;padding:10px;background:#FFF8E1;border-radius:10px">🎁 通关奖励：<b>${reward.emoji}${reward.name}</b> ×1（已存入背包）</div>` : ''}
+      </div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      ${!cleared ? '<button class="btn-primary" style="flex:1" onclick="closeFullscreen();startMemoryGame()">再来一局</button>' :
+        '<button class="btn-primary" style="flex:1" onclick="switchPage(\'shop\')">去商店逛逛</button>'}
+    </div>
+  `);
+  memoryState = null;
+}
+
+// ============================================================
+// 🎵 Game 4: 节奏摇摆（简化版节奏游戏）
+// ============================================================
+let rhythmState = null;
+
+function startRhythmGame() {
+  S.gameStats.rhythmPlays = (S.gameStats.rhythmPlays || 0) + 1;
+  checkGameFatigue('rhythm');
+  Storage.save();
+
+  openFullscreen(`
+    <div class="fs-header">
+      <button class="fs-back" onclick="quitRhythm()">← 退出</button>
+      <div class="fs-title">🎵 节奏摇摆</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="rhythm-container">
+      <div class="rhythm-hud">
+        <span>🎶 准确率 <span id="rhythmAcc">0%</span></span>
+        <span>💯 得分 <span id="rhythmScore">0</span></span>
+        <span>🔥 连击 <span id="rhythmCombo">0</span></span>
+      </div>
+      <div class="rhythm-track" id="rhythmTrack">
+        <div class="rhythm-line"></div>
+        <div class="rhythm-keys">
+          <div class="rhythm-key" id="rk1" onclick="rhythmTap(0)"></div>
+          <div class="rhythm-key" id="rk2" onclick="rhythmTap(1)"></div>
+          <div class="rhythm-key" id="rk3" onclick="rhythmTap(2)"></div>
+          <div class="rhythm-key" id="rk4" onclick="rhythmTap(3)"></div>
+        </div>
+      </div>
+      <div class="rhythm-tip">✨ 音符落到判定线时点击对应按键</div>
+    </div>
+  `);
+
+  const today = Storage.todayStr();
+  if (S.gameStats.dailyRhythmDate !== today) {
+    S.gameStats.dailyRhythmRewardCount = 0;
+    S.gameStats.dailyRhythmDate = today;
+  }
+  const rewardLeft = S.gameStats.dailyRhythmRewardCount < 3;
+
+  rhythmState = {
+    total: 0,
+    perfect: 0,
+    good: 0,
+    miss: 0,
+    combo: 0,
+    maxCombo: 0,
+    score: 0,
+    notes: [],
+    tickTimer: null,
+    spawnTimer: null,
+    duration: 45,
+    elapsed: 0,
+    rewardLeft,
+    _ended: false,
+    perfect10Triggered: false,
+  };
+
+  rhythmState.tickTimer = setInterval(rhythmTick, 30);
+  rhythmState.spawnTimer = setInterval(rhythmSpawn, 550);
+}
+
+let _rhythmIdCounter = 0;
+function rhythmSpawn() {
+  if (!rhythmState || rhythmState._ended) return;
+  const st = rhythmState;
+  if (st.elapsed > st.duration) return;
+  const keyIdx = Math.floor(Math.random() * 4);
+  const id = ++_rhythmIdCounter;
+  st.notes.push({ id, lane: keyIdx, y: -10, hit: false, judged: false });
+  const track = $('#rhythmTrack');
+  if (!track) return;
+  const el = document.createElement('div');
+  el.id = 'rhNote' + id;
+  el.className = 'rhythm-note';
+  el.style.left = (25 * keyIdx + 12.5) + '%';
+  el.style.top = '-10%';
+  track.appendChild(el);
+}
+
+function rhythmTick() {
+  if (!rhythmState || rhythmState._ended) return;
+  const st = rhythmState;
+  st.elapsed += 0.03;
+  if (st.elapsed > st.duration) {
+    setTimeout(endRhythmGame, 500);
+    return;
+  }
+  st.notes.forEach((n, i) => {
+    n.y += 1.1;
+    const el = document.getElementById('rhNote' + n.id);
+    if (el) {
+      el.style.top = n.y + '%';
+      // Miss判定：过了判定区
+      if (n.y > 92 && !n.judged) {
+        n.judged = true;
+        n.hit = 'miss';
+        st.miss++;
+        st.combo = 0;
+        Sound.play('fail');
+        renderRhythmHud();
+      }
+      if (n.y > 110) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        st.notes.splice(i, 1);
+      }
+    }
+  });
+}
+
+function rhythmTap(lane) {
+  if (!rhythmState || rhythmState._ended) return;
+  const st = rhythmState;
+  // 找最近的音符
+  let best = null, bestDist = Infinity;
+  st.notes.forEach(n => {
+    if (n.lane !== lane || n.judged) return;
+    const dist = Math.abs(n.y - 80);
+    if (dist < bestDist) { bestDist = dist; best = n; }
+  });
+  const key = document.getElementById('rk' + (lane+1));
+  if (key) {
+    key.classList.add('press');
+    setTimeout(() => key.classList.remove('press'), 150);
+  }
+
+  if (best && bestDist < 14) {
+    best.judged = true;
+    st.total++;
+    const label = $('#rhNote' + best.id);
+    if (bestDist < 5) {
+      // Perfect
+      st.perfect++;
+      st.score += 100;
+      st.combo++;
+      best.hit = 'perfect';
+      if (label) label.textContent = 'Perfect!';
+      Sound.play('success');
+      // 10连Perfect成就
+      if (st.combo >= 10 && !st.perfect10Triggered) {
+        st.perfect10Triggered = true;
+        S.gameStats.rhythmPerfect10++;
+        Storage.save();
+      }
+    } else if (bestDist < 10) {
+      // Good
+      st.good++;
+      st.score += 60;
+      st.combo++;
+      best.hit = 'good';
+      if (label) label.textContent = 'Good';
+      Sound.play('pet');
+    } else {
+      st.miss++;
+      st.combo = 0;
+      best.hit = 'miss';
+      if (label) label.textContent = 'Miss';
+      Sound.play('fail');
+    }
+    if (label) {
+      label.style.fontSize = '16px';
+      label.style.fontWeight = 'bold';
+      label.style.transform = 'scale(1.3)';
+      label.style.opacity = '0';
+    }
+    st.maxCombo = Math.max(st.maxCombo, st.combo);
+    renderRhythmHud();
+  }
+}
+
+function renderRhythmHud() {
+  if (!rhythmState) return;
+  const st = rhythmState;
+  const total = st.perfect + st.good + st.miss;
+  const acc = total === 0 ? 0 : Math.round((st.perfect + st.good * 0.6) / total * 100);
+  $('#rhythmAcc').textContent = acc + '%';
+  $('#rhythmScore').textContent = st.score;
+  $('#rhythmCombo').textContent = st.combo;
+}
+
+function quitRhythm() {
+  if (!rhythmState || rhythmState._ended) return;
+  if (confirm('退出节奏摇摆？')) endRhythmGame(true);
+}
+
+function endRhythmGame(quit) {
+  if (!rhythmState || rhythmState._ended) return;
+  rhythmState._ended = true;
+  const st = rhythmState;
+  if (st.tickTimer) clearInterval(st.tickTimer);
+  if (st.spawnTimer) clearInterval(st.spawnTimer);
+
+  const total = st.perfect + st.good + st.miss;
+  const acc = total === 0 ? 0 : Math.round((st.perfect + st.good * 0.6) / total * 100);
+  // 奖励金币（前3次）
+  let reward = 0;
+  if (st.rewardLeft) {
+    if (acc >= 90) reward = 50;
+    else if (acc >= 70) reward = 30;
+    else if (acc >= 50) reward = 20;
+  }
+  if (reward > 0) {
+    S.gameStats.dailyRhythmRewardCount++;
+    addCoin(reward);
+    addIntimacy(2);
+  }
+  checkBadges();
+
+  openFullscreen(`
+    <div class="fs-header"><div class="fs-title">🎵 本轮结束</div><div style="width:60px"></div></div>
+    <div class="quiz-result">
+      <div class="result-emoji">${acc >= 90 ? '🏆' : acc >= 70 ? '🎉' : '🎶'}</div>
+      <div class="result-text">得分 ${st.score}（准确率${acc}%）</div>
+      <div style="margin:12px 0;font-size:14px;color:#5a6a7c">
+        <div>Perfect: ${st.perfect} &nbsp; Good: ${st.good} &nbsp; Miss: ${st.miss}</div>
+        <div>🔥 最大连击：${st.maxCombo}</div>
+        ${reward > 0 ? `<div class="result-coin">🪙 +${reward} 金币 · 💖 亲密+2</div>` :
+          (st.rewardLeft ? '<div style="color:#8aa5b8">继续努力，答对更多拿金币！</div>' :
+           '<div style="color:#8aa5b8">今日奖励次数已用完，明天再来~</div>')}
+      </div>
+    </div>
+    <div style="padding:12px;display:flex;gap:8px">
+      <button class="btn-cancel" style="flex:1" onclick="switchPage('game')">返回中心</button>
+      <button class="btn-primary" style="flex:1" onclick="closeFullscreen();startRhythmGame()">再来一局</button>
+    </div>
+  `);
+  rhythmState = null;
 }

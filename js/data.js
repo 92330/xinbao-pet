@@ -677,6 +677,12 @@ const BADGES = [
   { id:'pen_pal',       name:'笔友',       icon:'✉️', desc:'写5封信给宠物',     color:'#EC407A' },
   { id:'artist',        name:'小画家',     icon:'🎨', desc:'画3幅悄悄画',       color:'#AB47BC' },
   { id:'helper',        name:'热心助人',   icon:'🤝', desc:'帮助旅行者3次',     color:'#FF7043' },
+  // 游戏徽章
+  { id:'race_rookie',   name:'飞驰新星',   icon:'🏎️', desc:'赛车累计5000分',    color:'#42A5F5' },
+  { id:'race_king',     name:'飞驰之王',   icon:'🏆', desc:'赛车单次超2000分',  color:'#FFD54F' },
+  { id:'memory_clear',  name:'记忆通关',   icon:'🧠', desc:'记忆大厨首次通关',  color:'#66BB6A' },
+  { id:'rainbow_lover', name:'彩虹收藏家', icon:'🌈', desc:'小画家画10道彩虹',  color:'#EC407A' },
+  { id:'game_master',   name:'游戏大师',   icon:'🎮', desc:'游玩全部游戏各1次', color:'#7E57C2' },
 ];
 
 // 称号系统（佩戴在头像旁）
