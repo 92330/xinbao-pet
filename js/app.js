@@ -166,6 +166,11 @@ function switchPage(name) {
   else if (name==='album') renderAlbum();
   else if (name==='game') renderGameCenter();
   else if (name==='more') renderMorePage();
+  // 行为埋点（习惯养成模块）
+  try {
+    var _m = { shop:'shop', album:'album' }[name];
+    if (_m) window.FH_track && window.FH_track(_m);
+  } catch (e) {}
 }
 
 // ============ 每日刷新 ============
@@ -879,6 +884,7 @@ function claimTask(i) {
   S.stats.weekTasks++;
   S.stats.weekCoins += reward;
   S.monthlyChallenge.tasksDone++;
+  try { window.FH_track && window.FH_track('task'); } catch (e) {}
   // 完成任务也给宠物经验
   const pet = getActivePet();
   gainExp(pet, t.reward);
@@ -1021,19 +1027,39 @@ function answerQuiz(i) {
   const q = quizState.questions[quizState.idx];
   const opts = $$('#quizOptions .quiz-option');
   opts.forEach(o=>o.onclick=null);
+  let correctOptEl = opts[q.answer];
+  let pickedOptEl = opts[i];
+  // 插入反馈提示框
+  const feedbackBox = document.createElement('div');
+  feedbackBox.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:12px;font-size:14px;text-align:center;font-weight:bold;animation:talkIn .25s ease;';
   if (i === q.answer) {
-    opts[i].classList.add('correct');
+    pickedOptEl.classList.add('correct');
     quizState.correct++;
     Sound.play('success');
+    feedbackBox.style.background = '#E8F5E9';
+    feedbackBox.style.color = '#2E7D32';
+    feedbackBox.textContent = '✅ 答对啦！真棒！';
+    try { window.FH_track && window.FH_track('answer'); } catch (e) {}
   } else {
-    opts[i].classList.add('wrong');
-    opts[q.answer].classList.add('correct');
+    pickedOptEl.classList.add('wrong');
+    if (correctOptEl) correctOptEl.classList.add('correct');
     Sound.play('error');
+    feedbackBox.style.background = '#FFEBEE';
+    feedbackBox.style.color = '#C62828';
+    const rightLetter = String.fromCharCode(65 + q.answer);
+    const rightText = String(q.options[q.answer] || '').replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+    feedbackBox.innerHTML = `❌ 错啦！正确答案是 <b>${rightLetter}. ${rightText}</b><br><span style="font-size:12px;color:#5a6a7c;font-weight:normal">记住啦，下次就会了~</span>`;
+  }
+  const optionsBox = document.getElementById('quizOptions');
+  if (optionsBox && optionsBox.parentNode) {
+    optionsBox.parentNode.insertBefore(feedbackBox, optionsBox.nextSibling);
   }
   setTimeout(()=>{
     quizState.idx++;
     showQuizQuestion();
-  }, 1200);
+  }, 1800);
 }
 
 function showQuizResult() {
@@ -1225,6 +1251,7 @@ function feedPet(id) {
   Sound.play('eat');
   closeModal();
   floatReward(`${def.emoji} 好吃！`, window.innerWidth/2, window.innerHeight/2);
+  try { window.FH_track && window.FH_track('feed'); } catch (e) {}
   renderHome();
 }
 
@@ -1831,6 +1858,7 @@ function finishDecorate() {
 
 // ============ 地图系统 ============
 function openMapList() {
+  try { window.FH_track && window.FH_track('map'); } catch (e) {}
   let html = '<div style="padding:12px">';
   D.MAP_DEFS.forEach(m=>{
     const unlocked = S.unlockedMaps.includes(m.id);
@@ -1995,6 +2023,7 @@ function checkAchievements() {
 
 // ============ 小游戏 ============
 function openMiniGameMenu() {
+  try { window.FH_track && window.FH_track('game'); } catch (e) {}
   const today = Storage.todayStr();
   if (S.dailyMiniGame.date !== today) S.dailyMiniGame = { date:today, frisbee:3, puzzle:1 };
   openFullscreen(`
@@ -2529,6 +2558,7 @@ function bindEvents() {
   $('#petDisplay').addEventListener('click', (e)=>{
     // 双击进详情
     if (e.detail === 2) openPetDetail();
+    try { window.FH_track && window.FH_track('pet_touch'); } catch (e2) {}
   });
   // 任务页按钮
   $('#btnAnswer').addEventListener('click', startQuiz);
@@ -2613,6 +2643,8 @@ function renderMorePage() {
       `).join('')}
     </div>
   `;
+  // 通知各扩展模块重新注入卡片（renderMorePage会清空grid）
+  try { window.dispatchEvent(new Event('morepage:rendered')); } catch (e) {}
 }
 
 // ============ 记账功能 ============
@@ -2957,15 +2989,38 @@ function showEnglishQuiz() {
 function answerEnglishQuiz(i) {
   const st = englishQuizState;
   const q = st.questions[st.idx];
+  const opts = $$('.quiz-options-vertical .quiz-option-v');
+  opts.forEach(o=>o.onclick=null);
+  let correctOptEl = opts[q.answer];
+  let pickedOptEl = opts[i];
+  const feedbackBox = document.createElement('div');
+  feedbackBox.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:12px;font-size:14px;text-align:center;font-weight:bold;animation:talkIn .25s ease;';
   if (i === q.answer) {
     st.correct++;
     st.reward += 5;
     Sound.play('success');
+    if (pickedOptEl) pickedOptEl.style.background = '#E8F5E9';
+    feedbackBox.style.background = '#E8F5E9';
+    feedbackBox.style.color = '#2E7D32';
+    feedbackBox.textContent = '✅ 答对啦！真棒！+5';
   } else {
     Sound.play('fail');
+    if (pickedOptEl) pickedOptEl.style.background = '#FFEBEE';
+    if (correctOptEl) correctOptEl.style.background = '#E8F5E9';
+    feedbackBox.style.background = '#FFEBEE';
+    feedbackBox.style.color = '#C62828';
+    const rightText = String(q.options[q.answer] || '').replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+    const rightLetter = String.fromCharCode(65 + q.answer);
+    feedbackBox.innerHTML = `❌ 错啦！正确答案是 <b>${rightLetter}. ${rightText}</b><br><span style="font-size:12px;color:#5a6a7c;font-weight:normal">记住哦~</span>`;
+  }
+  const vBox = document.querySelector('.quiz-options-vertical');
+  if (vBox && vBox.parentNode) {
+    vBox.parentNode.insertBefore(feedbackBox, vBox.nextSibling);
   }
   st.idx++;
-  setTimeout(showEnglishQuiz, 600);
+  setTimeout(showEnglishQuiz, 1700);
 }
 
 function finishEnglishQuiz() {

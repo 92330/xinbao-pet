@@ -113,25 +113,28 @@
     Storage.save();
   }
 
-  // ============ DOM 注入 ============
+  // ============ DOM 注入（移至"更多"页，避免主页home-func拥挤） ============
+  function FW_addMoreCard(id, icon, name, desc, onclickFn) {
+    const page = document.getElementById('page-more');
+    const grid = page ? page.querySelector('.more-grid') : null;
+    if (!grid) return;
+    if (document.getElementById(id)) return;
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = 'more-card';
+    el.onclick = onclickFn;
+    el.innerHTML =
+      '<div class="more-card-icon">' + icon + '</div>' +
+      '<div class="more-card-name">' + name + '</div>' +
+      '<div class="more-card-desc">' + desc + '</div>';
+    grid.appendChild(el);
+  }
+
   function injectHomeButtons() {
-    const func = document.querySelector('.home-func');
-    if (!func) return;
-    if (document.getElementById('fwGardenBtn')) return;
-    const g = document.createElement('button');
-    g.id = 'fwGardenBtn';
-    g.className = 'func-btn';
-    g.innerHTML = '🌷<br><small>花园</small>';
-    g.addEventListener('click', FWopenGarden);
-
-    const w = document.createElement('button');
-    w.id = 'fwWorldBtn';
-    w.className = 'func-btn';
-    w.innerHTML = '🌍<br><small>世界</small>';
-    w.addEventListener('click', FWopenWorld);
-
-    func.appendChild(g);
-    func.appendChild(w);
+    FW_addMoreCard('fwGardenCard', '🌷', '宠物花园', '种花养草，吸引蝴蝶来访',
+      function () { FWopenGarden(); });
+    FW_addMoreCard('fwWorldCard', '🌍', '世界探索', '环游10个国家，学习世界知识',
+      function () { FWopenWorld(); });
   }
 
   function injectCherryTree() {
@@ -741,6 +744,8 @@
     updateCherryTree();
     updateCloudBadge();
     startCloudSpawner();
+    // 监听更多页重渲染，重新注入卡片
+    window.addEventListener('morepage:rendered', function () { injectHomeButtons(); });
   }
 
   // ============ 暴露全局函数（供 onclick 调用） ============

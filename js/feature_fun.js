@@ -732,47 +732,56 @@
     }
   }
 
-  // ============ DOM 注入：主页图标 ============
+  // ============ DOM 注入：更多页面卡片（避免主页home-func拥挤） ============
+
+  function FF_addMoreCard(id, icon, name, desc, onclickFn) {
+    var page = document.getElementById('page-more');
+    var grid = page ? page.querySelector('.more-grid') : null;
+    if (!grid) return;
+    if (document.getElementById(id)) return;
+    var el = document.createElement('div');
+    el.id = id;
+    el.className = 'more-card';
+    el.onclick = onclickFn;
+    el.innerHTML =
+      '<div class="more-card-icon"><span class="ff-card-icon">' + icon + '</span>' +
+        '<span class="ff-more-badge" style="display:none;position:absolute;margin-left:-8px;margin-top:-4px;background:#FF8A65;color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;align-items:center;justify-content:center"></span>' +
+      '</div>' +
+      '<div class="more-card-name">' + name + '</div>' +
+      '<div class="more-card-desc">' + desc + '</div>';
+    grid.appendChild(el);
+  }
 
   function injectHomeIcons() {
-    var scene = document.getElementById('homeScene');
-    if (!scene) return;
-
-    // 藏宝图按钮（追加到右上角功能区按钮列）
-    var homeFunc = scene.querySelector('.home-func');
-    if (homeFunc && !document.getElementById('ff-treasure-btn')) {
-      var t = document.createElement('button');
-      t.id = 'ff-treasure-btn';
-      t.className = 'func-btn ff-treasure-btn';
-      t.setAttribute('type', 'button');
-      t.innerHTML = '🗺️<br><small>藏宝图</small>';
-      t.addEventListener('click', openTreasureMap);
-      homeFunc.appendChild(t);
-    }
-
-    // 昆虫旅馆图标已移至"更多"页面，不再在主页浮动注入
+    // 藏宝图卡片已移至"更多"页面，不再在主页home-func拥挤
+    FF_addMoreCard('ff-treasure-card', '🗺️', '藏宝图挖宝', '集齐碎片挖宝，金币道具等你来拿',
+      function () { openTreasureMap(); });
     refreshHomeIcons();
   }
 
   function refreshHomeIcons() {
     ensureState();
     var ff = S.featureFun.treasure;
-    var btn = document.getElementById('ff-treasure-btn');
-    if (btn) {
-      // 清除旧角标
-      var old = btn.querySelector('.ff-icon-badge');
-      if (old) old.remove();
+    var card = document.getElementById('ff-treasure-card');
+    if (card) {
+      var badge = card.querySelector('.ff-more-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'ff-more-badge';
+        badge.style.cssText = 'display:none;position:absolute;margin-left:-8px;margin-top:-4px;background:#FF8A65;color:#fff;font-size:10px;border-radius:50%;width:16px;height:16px;align-items:center;justify-content:center';
+        var iconBox = card.querySelector('.more-card-icon');
+        if (iconBox) iconBox.appendChild(badge);
+      }
       var total = ff.fragments.up + ff.fragments.down + ff.fragments.left + ff.fragments.right;
       var showNum = '';
       if (ff.maps > 0) showNum = '!';
       else if (total > 0) showNum = String(total);
       if (showNum) {
-        var badge = document.createElement('span');
-        badge.className = 'ff-icon-badge';
         badge.textContent = showNum;
-        btn.appendChild(badge);
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
       }
-      btn.classList.toggle('has-map', ff.maps > 0);
     }
   }
 
@@ -823,6 +832,8 @@
       startBugHotelCheck();
       startIconRefresh();
       dailyTreasureDropCheck();
+      // 监听更多页重渲染，重新注入藏宝图卡片
+      window.addEventListener('morepage:rendered', function () { injectHomeIcons(); });
     } else {
       injectShopGachaEntry();
       injectHomeIcons();

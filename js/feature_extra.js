@@ -332,17 +332,26 @@
   }
 
   // ============ 功能3：告别与传承 ============
+  // 向"更多"页注入卡片（通用），避免主页home-func拥挤
+  function FE_addMoreCard(id, icon, name, desc, onclickFn) {
+    var page = document.getElementById('page-more');
+    var grid = page ? page.querySelector('.more-grid') : null;
+    if (!grid) return;
+    if (document.getElementById(id)) return;
+    var el = document.createElement('div');
+    el.id = id;
+    el.className = 'more-card';
+    el.onclick = onclickFn;
+    el.innerHTML =
+      '<div class="more-card-icon">' + icon + '</div>' +
+      '<div class="more-card-name">' + name + '</div>' +
+      '<div class="more-card-desc">' + desc + '</div>';
+    grid.appendChild(el);
+  }
+
   function injectFarewellBtn() {
-    var func = document.querySelector('.home-func');
-    if (!func) return;
-    if (document.getElementById('feFarewellBtn')) return;
-    var b = document.createElement('button');
-    b.id = 'feFarewellBtn';
-    b.className = 'func-btn fe-farewell-btn';
-    b.setAttribute('type', 'button');
-    b.innerHTML = '👋<br><small>告别</small>';
-    b.addEventListener('click', FEopenFarewell);
-    func.appendChild(b);
+    FE_addMoreCard('feFarewellCard', '👋', '告别与传承', '送宠物踏上旅程，传承信物给其他宠物',
+      function () { FEopenFarewell(); });
   }
 
   function FEopenFarewell() {
@@ -673,16 +682,8 @@
 
   // ============ 功能6：宠物AR相机 ============
   function injectARCameraBtn() {
-    var func = document.querySelector('.home-func');
-    if (!func) return;
-    if (document.getElementById('feARBtn')) return;
-    var b = document.createElement('button');
-    b.id = 'feARBtn';
-    b.className = 'func-btn';
-    b.setAttribute('type', 'button');
-    b.innerHTML = '📷<br><small>AR</small>';
-    b.addEventListener('click', FEopenARCamera);
-    func.appendChild(b);
+    FE_addMoreCard('feARCard', '📸', '宠物AR相机', '打开摄像头，把宠物放到真实世界里拍照留念',
+      function () { FEopenARCamera(); });
   }
 
   var arStream = null;
@@ -857,16 +858,8 @@
 
   // ============ 功能7：语音助手"小宠" ============
   function injectVoiceBtn() {
-    var func = document.querySelector('.home-func');
-    if (!func) return;
-    if (document.getElementById('feVoiceBtn')) return;
-    var b = document.createElement('button');
-    b.id = 'feVoiceBtn';
-    b.className = 'func-btn';
-    b.setAttribute('type', 'button');
-    b.innerHTML = '🎤<br><small>语音</small>';
-    b.addEventListener('click', FEopenVoice);
-    func.appendChild(b);
+    FE_addMoreCard('feVoiceCard', '🎤', '语音助手小宠', '语音命令帮你喂食、互动、打开功能',
+      function () { FEopenVoice(); });
   }
 
   function FEopenVoice() {
@@ -1067,6 +1060,7 @@
     // 亲密度+1，不限次数
     addIntimacy(1);
     ac.dailyCount += 1;
+    try { window.FH_track && window.FH_track('chat'); } catch (e) {}
     saveFE();
     FErenderChat();
     // 显示"正在思考..."并异步获取回复
@@ -1436,6 +1430,13 @@
   window.FEdoClearChat = FEdoClearChat;
   window.FEopenAIConfig = FEopenAIConfig;
   window.FEdoSaveAIConfig = FEdoSaveAIConfig;
+
+  // 监听更多页重渲染，重新注入卡片
+  window.addEventListener('morepage:rendered', function () {
+    injectFarewellBtn();
+    injectARCameraBtn();
+    injectVoiceBtn();
+  });
 
   // ============ 自动初始化：轮询 S 就绪后调用 ============
   function autoInit() {
