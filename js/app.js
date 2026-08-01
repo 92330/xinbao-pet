@@ -962,7 +962,7 @@ function startQuiz() {
         ${renderOpts('subject', opt.subjects, s=>s)}
       </div>
     </div>
-    <div style="font-size:12px;color:#8aa5b8;text-align:center">每日最多200金币 · 答对+10 · 满分+20</div>
+    <div style="font-size:12px;color:#8aa5b8;text-align:center">每答对1题立即+10金币 · 满分额外+20 · 每日上限200</div>
   `, `<button class="btn-cancel" onclick="closeModal()">取消</button>
       <button class="btn-primary" onclick="beginQuiz()">开始答题</button>`);
   // 选项点击切换
@@ -1038,7 +1038,23 @@ function answerQuiz(i) {
     Sound.play('success');
     feedbackBox.style.background = '#E8F5E9';
     feedbackBox.style.color = '#2E7D32';
-    feedbackBox.textContent = '✅ 答对啦！真棒！';
+    // 每答对一题立即发放10金币（受每日200上限约束）
+    var _remain = 200 - (S.dailyAnswer.count || 0);
+    if (_remain >= 10) {
+      addCoin(10);
+      S.dailyAnswer.count = (S.dailyAnswer.count||0) + 10;
+      S.stats.weekCoins += 10;
+      Storage.save();
+      feedbackBox.textContent = '✅ 答对啦！真棒！+10 金币';
+    } else if (_remain > 0) {
+      addCoin(_remain);
+      S.dailyAnswer.count = (S.dailyAnswer.count||0) + _remain;
+      S.stats.weekCoins += _remain;
+      Storage.save();
+      feedbackBox.textContent = '✅ 答对啦！真棒！+' + _remain + ' 金币';
+    } else {
+      feedbackBox.textContent = '✅ 答对啦！真棒！';
+    }
     try { window.FH_track && window.FH_track('answer'); } catch (e) {}
   } else {
     pickedOptEl.classList.add('wrong');
@@ -1064,23 +1080,26 @@ function answerQuiz(i) {
 
 function showQuizResult() {
   const correct = quizState.correct;
-  let coin = correct * 10;
-  if (correct === 10) coin += 20;
-  // 双倍卡/魔法学院地图/节日
-  if (S.dailyFortune.effect === 'task_double') coin *= 2;
-  if (S.unlockedMaps.includes('magic')) coin *= 2;
+  // 基础奖励(10/题)已在答题时逐题发放，这里只结算加成
+  let bonus = 0;
+  let bonusText = '';
+  if (correct === 10) { bonus += 20; bonusText = '满分奖励 +20'; }
+  // 双倍卡/魔法学院地图：补发基础奖励等额金币
+  if (S.dailyFortune.effect === 'task_double') { bonus += correct * 10; bonusText = (bonusText?bonusText+' · ':'') + '双倍卡 +' + (correct*10); }
+  if (S.unlockedMaps.includes('magic')) { bonus += correct * 10; bonusText = (bonusText?bonusText+' · ':'') + '魔法地图 +' + (correct*10); }
   // 每日上限200
   const remain = 200 - (S.dailyAnswer.count || 0);
-  if (coin > remain) coin = Math.max(0, remain);
-  S.dailyAnswer.count = (S.dailyAnswer.count||0) + coin;
-  addCoin(coin);
+  if (bonus > remain) bonus = Math.max(0, remain);
+  S.dailyAnswer.count = (S.dailyAnswer.count||0) + bonus;
+  if (bonus > 0) addCoin(bonus);
   S.stats.weekAnswers += correct;
-  S.stats.weekCoins += coin;
+  S.stats.weekCoins += bonus;
   S.monthlyChallenge.answerRight += correct;
   // 答题也给宠物经验
   gainExp(getActivePet(), correct * 5);
   Storage.save();
   Sound.play('levelup');
+  var totalCoin = correct * 10 + bonus;
   openFullscreen(`
     <div class="fs-header">
       <div class="fs-title">📝 答题结果</div>
@@ -1089,7 +1108,8 @@ function showQuizResult() {
     <div class="quiz-result">
       <div class="result-emoji">${correct>=9?'🏆':correct>=6?'🌟':correct>=3?'😊':'💪'}</div>
       <div class="result-text">答对 ${correct} / 10 题</div>
-      <div class="result-coin">🪙 +${coin} 金币</div>
+      <div class="result-coin">🪙 +${totalCoin} 金币</div>
+      ${bonusText ? `<div style="font-size:12px;color:#FFA726;margin-top:4px">${bonusText}</div>` : ''}
       <button class="btn-primary" style="padding:12px 32px;border-radius:20px" onclick="closeFullscreen()">完成</button>
     </div>
   `);
@@ -2997,12 +3017,15 @@ function answerEnglishQuiz(i) {
   feedbackBox.style.cssText = 'margin-top:12px;padding:10px 12px;border-radius:12px;font-size:14px;text-align:center;font-weight:bold;animation:talkIn .25s ease;';
   if (i === q.answer) {
     st.correct++;
-    st.reward += 5;
+    st.reward += 10;
     Sound.play('success');
     if (pickedOptEl) pickedOptEl.style.background = '#E8F5E9';
     feedbackBox.style.background = '#E8F5E9';
     feedbackBox.style.color = '#2E7D32';
-    feedbackBox.textContent = '✅ 答对啦！真棒！+5';
+    // 立即发放10金币
+    addCoin(10);
+    Storage.save();
+    feedbackBox.textContent = '✅ 答对啦！真棒！+10 金币';
   } else {
     Sound.play('fail');
     if (pickedOptEl) pickedOptEl.style.background = '#FFEBEE';
@@ -3036,18 +3059,19 @@ function finishEnglishQuiz() {
     bonus = 15;
     bonusText = '⭐ 接近全对 +15 金币';
   }
-  const totalReward = reward + bonus;
-  if (totalReward > 0) addCoin(totalReward);
+  // 基础奖励(reward)已在答题时逐题发放，这里只发加成
+  if (bonus > 0) addCoin(bonus);
   Storage.save();
   Sound.play(allCorrect ? 'levelup' : 'success');
   const emoji = allCorrect ? '🏆' : (correct >= 3 ? '🎉' : '💪');
+  var totalReward = reward + bonus;
   openFullscreen(`
     <div class="fs-header"><div class="fs-title">🧪 检验结果</div><div style="width:60px"></div></div>
     <div class="quiz-result">
       <div class="result-emoji">${emoji}</div>
       <div class="result-text">答对 ${correct} / ${total} 题</div>
       <div style="margin:12px 0">
-        ${correct > 0 ? `<div style="color:#66BB6A;font-size:15px">基础奖励 +${reward} 金币</div>` : ''}
+        ${correct > 0 ? `<div style="color:#66BB6A;font-size:15px">基础奖励 +${reward} 金币（已发放）</div>` : ''}
         ${bonusText ? `<div style="color:#FFA726;font-size:15px;margin-top:4px">${bonusText}</div>` : ''}
         ${totalReward > 0 ? `<div class="result-coin">🪙 共 +${totalReward} 金币</div>` : '<div style="color:#8aa5b8">继续努力哦~</div>'}
       </div>
